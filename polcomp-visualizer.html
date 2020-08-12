@@ -1,0 +1,123 @@
+<title>styropyro discord political compass visualizer</title>
+<meta charset="utf8"/>
+<style>
+    canvas {
+        border: 1px solid black;
+        /* TODO */
+        width: 500px;
+        height: 500px;
+    }
+
+    .name {
+        font-weight: 500;
+    }
+
+    #selected {
+        padding: 1em;
+    }
+
+    #frame {
+        display: flex;
+    }
+</style>
+<h1>styropyro discord political compass visualizer</h1>
+<div id="frame">
+    <canvas></canvas>
+    <div id="selected"></div>
+</div>
+<script>
+    const canv = document.querySelector("canvas")
+    const selected = document.querySelector("#selected")
+    canv.height = 500
+    canv.width = 500
+
+    const ctx = canv.getContext("2d")
+
+    const drawRect = (c, x, y, w, h) => {
+        ctx.fillStyle = c
+        ctx.fillRect(x, y, w, h)
+    }
+
+    drawRect("salmon", 0, 0, 250, 250)
+    drawRect("aquamarine", 250, 0, 250, 250)
+    drawRect("lightgreen", 0, 250, 250, 250)
+    drawRect(Math.random() > 0.5 ? "orchid" : "yellow", 250, 250, 250, 250)
+
+    const drawLine = (x1, y1, x2, y2) => {
+        // technically there's a line thing *anyway*
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1)
+    }
+
+    ctx.fillStyle = "black"
+    for (let x = 1; x < 20; x++) {
+        drawLine(x * 25, 0, x * 25 + 1, 500)
+    }
+    for (let y = 1; y < 20; y++) {
+        drawLine(0, y * 25, 500, y * 25 + 1)
+    }
+    drawLine(0, 248, 500, 252)
+    drawLine(248, 0, 252, 500)
+
+    const results = new Map([
+        ["C4M0K41#2507",           { x: -8.9, y: -8.9, prog: -6.5, color: "#9a0200" }],
+        ["gollark#3909",           { x: 2   , y: 6.7 , prog: 12  , color: "#04d9ff" }],
+        ["dunnousername#8672",     { x: -0.1, y: 5   , prog: 8.5 , color: "#f97306" }],
+        ["ThatRedKite#0815",       { x: -3.6, y: -0.3, prog: 13.5, color: "#77926f" }], // formerly -3.9, -1.3, 12.5
+        ["Billy Mays#5049",        { x: -7.2, y: 2.3 , prog: 9   , color: "#0b5509" }],
+        ["charizardrekt#0312",     { x: -0.3, y: 2.3 , prog: 4.9 , color: "#3675ab" }],
+        ["Tiki#9380",              { x: 1.6 , y: 0.3 , prog: 9.9 , color: "#00d5dc" }],
+        ["0x1c1ean#1489",          { x: 1   , y: 1.3 , prog: 6.4 , color: "#21fc0d" }],
+        ["Curiosity#5280",         { x: -3.3, y: 3.3 , prog: 11  , color: "#fe019a" }],
+        ["P-α3#3732",              { x:  3.9, y: -7.3, prog: 0.5 , color: "#ff073a" }],
+        ["komrad kit#8767",        { x: -8  , y: -7.3, prog: 7   , color: "#ffc512" }], // approx - he may have meant +7.3 on y
+        ["Armor Plated Meme#2957", { x: -2.3, y: -4  , prog: -2  , color: "#6258c4" }],
+        ["Qwerty#1111",            { x:3.6  , y: 3   , prog:2.5  , color: "#019529" }],
+        ["Lemon_Emu#6143",         { x: -1.6, y: -1  , prog: 0.5 , color: "#fff917" }],
+        ["Kitty Strafe#3480",      { x: -1.3, y: -3  , prog: 8   , color: "#1f0954" }]
+    ])
+
+    for (const [k, v] of results) {
+        v.cx = Math.round((v.x * 25) + 250)
+        v.cy = Math.round((v.y * 25) + 250)
+        drawRect(v.color, v.cx - 8, v.cy - 8, 16, 16)
+    }
+
+    const e = (cls, parent, content) => {
+        const element = document.createElement("div")
+        element.classList.add(cls)
+        if (content) { element.appendChild(document.createTextNode(content)) }
+        if (parent) { parent.appendChild(element) }
+        return element
+    }
+
+    const clearSelected = () => { while (selected.firstChild) { selected.removeChild(selected.firstChild) } }
+
+    const updateSelected = info => {
+        e("name", selected, info.name)
+        e("xaxis", selected, `Rightism (X, L/R): ${info.x}`)
+        e("yaxis", selected, `Libertarianism (Y, Auth/Lib): ${info.y}`)
+        e("culturalaxis", selected, `Progressiveness (Conservative/Progressive): ${info.prog}`)
+    }
+
+    const updateFromEvent = (ev, clear) => {
+        const mx = ev.clientX - canv.offsetLeft
+        const my = ev.clientY - canv.offsetTop
+        for (const [k, v] of results) {
+            if (Math.abs(v.cx - mx) < 16 && Math.abs(v.cy - my) < 16) {
+                console.log("selecting", k)
+                clearSelected()
+                updateSelected({ ...v, name: k })
+                return
+            }
+        }
+        if (clear) { clearSelected() }
+    }
+
+    canv.addEventListener("click", ev => {
+        updateFromEvent(ev, true)
+    })
+
+    canv.addEventListener("mousemove", ev => {
+        updateFromEvent(ev, false)
+    })
+</script>

@@ -1,0 +1,87 @@
+<html>
+    <head>
+        <title>entitlement</title>
+        <meta charset="utf-8" />
+        <style>
+            .hide {
+                opacity:0;
+            }
+            .hide:hover{
+                opacity:1;
+            }
+            button {
+                margin-left: -1px;
+                border: 1px solid black;
+                background: lightgray;
+                padding: 0.5em;
+            }
+        </style>
+    </head>
+    <body>
+        <noscript>enable js you utter bee</noscript>
+        <div id="o"></div>
+        <script>
+            var state="start"; // SPOILERS SPOILERS OH GOD SPOILERS OH GOD SPOILERS //
+            var game={
+                "start":["hi you are level 3³³ ersearcher in the scp floundation. whatdo?",["173","go to SCP-173s chamber"],["antimemetics","go to the antimemetics division"],["start-2","keep going somewhere"]],
+                "start-2":["ok you go somewhere else. wow",["start","go back"],["174","go to SCP-174s chamber"],["175","go to SCP-175s chamber"],["176","go to SCP-176s chamber"],["dontquestionit","wait, scps arent just contained in the order of their numbering like that"],["start-3","keep going somewhere"]],
+                "start-3":["you keep going for some reason.",["start-2","go back"],["177","go to SCP-177s chamber"],["178","go to SCP-178s chamber"]],
+                "traitor":["youre killed by armed guards lol",["start","rip"]],
+                "178":["its guarded by armed guards and only level 4 researchers can access it.",["pata2","get it anyway"],["start-3","leave"]],
+                "pata2":["ugh, again? no, you cant just use pataphysics for everything",["178","oh, ok. i guess i wont then"],["178opened","use pataphysics anyway","h"]],
+                "178opened":["ok, fine, you win. you put SCP-178 on. you see 3 entities. what now?",["178ent1","look at entity 1"],["178ent2","look at entity 2"],["178ent3","look at entity 3"],["178run","run"],["traitor","take it off"]],
+                "178ent1":["you look at entity 1. it sure is the first entity.",["178opened","stop that"],["lacerated","attempt conversation"],["lacerated","attack"]],
+                "178ent2":["you look at entity 2. it sure is the second entity.",["178opened","stop that"],["lacerated","attempt conversation"],["lacerated","attack"],["dontquestionit","this is dumb","h"]],
+                "178ent3":["you look at entity 3. it sure is the last entity.",["178opened","stop that"],["lacerated","attempt conversation"],["lacerated","attack"]],
+                "178run":["you start running away, still wearing SCP-178",["traitor","go back"],["178run1-remove","remove SCP-178 and keep running"],["178run1-keep","keep SCP-178 and keep running"]],
+                "178run1-keep":["you run into an entity by accident",["lacerated","oh no"]],
+                "178run1-remove":["you run into armed guards",["traitor","oh no"]],
+                "177":["hmm is chessboard yes.",["start-3","leave"],["chess","play"]],
+                "lacerated":["you die from several lacerations",["start","rip"]],
+                "chess":["at some point i might make my own chess thing here or something, but for now, no",["start-3","leave"]],
+                "dontquestionit":["if youre so smart why dont you go enter SCP-7812-1s chamber?",["7812-1","wait what"]],
+                "176":["SCP-176 is contained on-site lol no",["start-2","well im sorry for not reading every series 1 page then"]],
+                "175":["SCP-175 is in a metal safe which you can't open",["start-2","boring"],["cantopen","open it anyway"]],
+                "cantopen":["thats not how it works, when i said 'you can't open' i was directly referring to you",["175","fineeee"],["stillno","utilize pa<span class='hide'>s</span>taphysics to open it"]],
+                "stillno":["while this universe can be manipulated by narrative forces, this one is manipulating you to be unable to open that safe",["175","unfortunate"]],
+                "174":["SCP-174 looks at you, probably",["nope","be manipulated by SCP-174"],["start-2","leave the chamber of containment"]],
+                "nope":["actually you have better things to do than that, so you decide to leave",["start-2","oh"]],
+                "173":["no wtf SCP-173 is like the deadlies apioarachnocognitoteleoinfohazard ever! you died.",["start","start again"]],
+                "antimemetics":["what? there is no antimemetics division.",["start","go back"],["counterconceptual","go to the counterconceptual department"],["55-1","go to SCP-055s chamber","h"]],
+                "counterconceptual":["sorry not done yet lOl",["antimemetics","back to antimemetics division page"],["start","back to start"],["woah","...or is that what they want you to think?","h"]],
+                "55-1":["...",["55-2","…And what have we learned?"]],
+                "55-2":["It takes you a significant amount of time to answer your own question. You speak with a measured, level tone. You are in no hurry.",["55-3","We have learned that there is time missing from our world. Almost a year of extremely recent history. And there are spaces, significant spaces, in every population center, which cannot be perceived or entered. The cities are rerouting around them, like mountains or radiation zones. And along with that time and that space, we have learned that there are enough people missing, without any explanation whatsoever, that if I spent the rest of my considerably augmented lifespan counting them, I could not count to that number."]],
+                "55-3":["...",["55-4","And outside of the Noöspherics Division, no one, not a single person, is even aware of these… thefts. Even those in the Division, who made this discovery, cannot recall what happened during that missing time. And no one can enter that missing space. The gap in reality, itself, can barely be perceived. It is this… shocking, blinding absence. This unknown unknown."]],
+                "55-4":["...",["55-5","We have learned — we have cautiously hypothesized — that three to four years ago an unimaginable anomaly entered our reality. And then, some time later, it left, taking all of that space, and all of that time, and all of those people with it. We do not know what it was, or what it did. We have tried to find out, but the truth evades my best noösphericists. The question fights back, as if it doesn't want to be answered. And we do not know why the anomaly left, though my experts say that in the conceptual realm, there is evidence — traces — of what could have been a conflict. And in the distance, shining down on us, there is a great new star."]],
+                "55-5":["...",["55-6","Even I don't remember what happened. Which I, personally, find... deeply alarming. Because this is recent history. Like nearly everybody alive, I must have been there. In some respect, I must have gone through it."]],
+                "55-6":["...",["55-7","But if we have learned nothing else, we have learned this: humans can walk away from, and forget, anything. Civilization can go back to 'normal' after anything."]],
+                "55-7":["...",["55-8","And I wonder: what was the Foundation's role in this? Were we witness to this anomaly? Were we the ones who defeated it? Did we resist? Negotiate? Participate?"]],
+                "55-8":["...",["55-9","We are here, now. Intact. We are back. To what do we owe that? Did we hide, or run?"]],
+                "55-9":["...",["55-10","Do we deserve to be back? Have we that right? We failed in our stated objective. These people are gone, and it's useless to pretend that they aren't dead. We failed orders of magnitude harder than we've ever failed before. Despite which, we remain clandestine, and unknown to greater humanity. Which means that no one external to the Foundation can ever hold us accountable for our actions, or lack thereof. If what happened at the O5 Council meeting yesterday is any indication, we will certainly never hold ourselves accountable."]],
+                "55-10":["...",["55-11","What happened to those people? My people. Where are they? No one is just dead, no one is merely, passively dead. Death is caused."]],
+                "55-11":["SCP-055 cannot answer you.",["55-12","These things happen. And we say to ourselves, 'Never again.' And a hundred years pass. And they happen. Again."]],
+                "55-12":["...",["55-13","Last time. The time before this one, the time none of us remember, the time for which there is no evidence of any kind, but which I now realise must exist. That time, when we told ourselves and each other, 'We must do better,' what did we do differently, from then on, and why didn't it work?"]],
+                "55-13":["...",["55-14","What does the Foundation need to be? Where does it need to be, and how far is that place from here? Can we see it from here?"]],
+                "55-14":["...",["55-15","Or is this it?"],["truelvl","also, this is an O5s dialogue. arent I a level 3 researcher?","h"]],
+                "truelvl":["obviously not, what kind of level 3 researcher can just wander into random divisions/departments and walk into the rooms of various SCPs?",["55-14","fair point"],["dontquestionit","but i might be just abusing antimemes to do it!"]],
+                "55-15":["You do not know. And after leaving the containment unit, you know, you will not even remember the questions.",["antimemetics","enough of that lol"]],
+                "woah":["you now have access to scps! wait what does this have to do with the counethdfjghkdfjghceuptueal department?",["antimemetics","the what?"],["start","who knows"],["6094","visit SCP-6094"],["7812-1","visit SCP-7812-1"],["7812","visit SCP-7812"]],
+                "6094":["you breathe in some ████████ dust and die, idot",["start","rip"]],
+                "7812-1":["<b>all</b> <i>is</i> <h6>happiness</h6>",["7812-1","futility"]],
+                "7812":["This is it. The source of it all. The SCP designated as 7812 to hide the real truth of SCP-001. What will you do? You can't destroy it. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal. 7812 is eternal.",["7812-1","submit"],["start","self-amnesticize"]],
+            }
+            var o=document.getElementById("o")
+            function btn(cont){
+                return "<button onclick=c(\""+cont[0]+"\")"+(cont[2]=="h"?" class='hide'":"")+">"+cont[1]+"</button>"
+            }
+            function c(st){
+                state=st
+                o.innerHTML="<p>"+game[st][0]+"</p>"
+                for (var i=1;i<game[st].length;i++){
+                    o.innerHTML+=btn(game[st][i])
+                }
+            }
+            c(state)
+        </script>
+    </body>
+</html>
