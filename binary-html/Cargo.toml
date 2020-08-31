@@ -1,0 +1,10 @@
+[package]
+name = "binary-html"
+version = "0.1.0"
+authors = ["osmarks <osmarks@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+num_enum = "0.5"
+rmp = "0.8"
+thiserror = "1.0"
