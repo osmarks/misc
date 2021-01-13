@@ -21,3 +21,4 @@ This comes with absolutely no guarantee of support or correct function, although
 * something which generates random vaguely human readable names in Elm. Please note that I do NOT endorse the use of Elm and this is provided mostly just to make the languages list at the side weirder.
 * F# kerbal name generator & very basic stack calculator
 * importer part of an unfinished wikipedia database dump viewer
+* `ptt.py` - Python-based systemwide push to talk (mutes and unmutes microphone via PulseAudio) with tray icon
