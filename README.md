@@ -22,3 +22,5 @@ This comes with absolutely no guarantee of support or correct function, although
 * F# kerbal name generator & very basic stack calculator
 * importer part of an unfinished wikipedia database dump viewer
 * `ptt.py` - Python-based systemwide push to talk (mutes and unmutes microphone via PulseAudio) with tray icon
+* `list-sort.py` - Made for a competition, it sorts a list by making a somewhat weird Lispy language and implementing quicksort(ish) in it.
+* `mcc.py` - a chat program. Unlike most chat programs, it runs over IPv6 multicast so you can talk to anyone on your LAN who also happens to have this program somehow. Very flaky, due to trying to autoguess a network interface to use and also limited testing, as well as quite barebones.
