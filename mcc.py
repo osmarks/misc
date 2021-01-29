@@ -87,10 +87,10 @@ local_id = random.randint(0, 0xFFFF)
 
 def shorthex(x): return "{:04x}".format(x)
 def encode_packet(ty, nick, content):
-    return struct.pack("!BH10s", ty, local_id, nick.encode("utf-8")) + content.encode("utf-8")
+    return struct.pack("!BH16s", ty, local_id, nick.encode("utf-8")) + content.encode("utf-8")
 def decode_packet(pkt):
-    ty, local_id, nick = struct.unpack("!BH10s", pkt[:13])
-    content = pkt[13:]
+    ty, local_id, nick = struct.unpack("!BH16s", pkt[:19])
+    content = pkt[19:]
     return ty, local_id, nick.rstrip(b"\0").decode("utf-8"), content.decode("utf-8")
 
 Peer = collections.namedtuple("Peer", ["nick", "timeout_counter"])
@@ -112,7 +112,7 @@ async def run():
     ifn = socket.if_nametoindex(interface)
     sock, addr = configure_multicast(maddr, ifn)
 
-    own_nick = getpass.getuser()
+    own_nick = f"{getpass.getuser()}@{socket.gethostname()}"[:16]
     peers = {}
 
     def cb():
@@ -140,15 +140,15 @@ async def run():
     async def outq(s):
         if s.startswith("/nick "):
             newnick = s[6:]
-            if len(newnick.encode("utf8")) > 10:
-                inq.put_nowait("! Max nick length is 10 bytes")
+            if len(newnick.encode("utf8")) > 16:
+                inq.put_nowait("! Max nick length is 16 bytes")
                 return
             inq.put_nowait(f"! You are now {newnick}")
             nonlocal own_nick
             own_nick = newnick
             return
         elif s.startswith("/peer"):
-            p = [f"{p.nick} ({i})" for i, p in peers.items()]
+            p = [f"{repr(p.nick)} ({i})" for i, p in peers.items()]
             inq.put_nowait(f"! Peers: {', '.join(p)}")
             return
         inq.put_nowait(f"{own_nick}: {s}")
