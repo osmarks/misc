@@ -78,16 +78,20 @@ async def spudnet_connect():
         assert json.loads(await conn.recv())["type"] == "ok"
         return True
     
+    async def send_alive():
+        return await send({ "type": "alive_info", "name": await getconf("name"), "category": await getconf("category"),
+            "buttons": [ 
+                { "type": "textarea", "respondon": "set_name", "name": "Set Name" },
+                { "type": "textarea", "respondon": "set_cat", "name": "Set Category" } ,
+                { "type": "chatlike", "2way": "repl", "name": "Python REPL" },
+                { "type": "chatlike", "2way": "chat", "name": "Dronechat" },
+                { "type": "simple", "onclick": "counter", "name": await getconf("counter") or "0" }
+        ]})
+
     async def aliveness_loop():
         while True:
             if conn:
-                await send({ "type": "alive_info", "name": await getconf("name"), "category": await getconf("category"),
-                    "buttons": [ 
-                        { "type": "textarea", "respondon": "set_name", "name": "Set Name" },
-                        { "type": "textarea", "respondon": "set_cat", "name": "Set Category" } ,
-                        { "type": "chatlike", "2way": "repl", "name": "Python REPL" },
-                        { "type": "chatlike", "2way": "chat", "name": "Dronechat" }
-                ]})
+                await send_alive()
             await asyncio.sleep(1)
 
     loop.create_task(aliveness_loop())
@@ -111,6 +115,10 @@ async def spudnet_connect():
             loop.create_task(run())
         if data["type"] == "chat":
             await send({ "type": "stream_upd", "streamid": "chat", "data": f"{rmsg['sid']}: {data['data']}" })
+        if data["type"] == "counter":
+            c = int(await getconf("counter") or "0")
+            await setconf("counter", str(c + 1))
+            await send_alive()
 
     while True:
         try:
