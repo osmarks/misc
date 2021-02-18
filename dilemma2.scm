@@ -76,12 +76,15 @@
 (define actually-forgiving-grudge
   (lambda (x y) (let* (
     (defection-count (length (filter (lambda (m) (= m 1)) x)))
+    ; TODO: tune 1.8 there, or maybe entirely switch out formula
     (lookback (+ 1 (inexact->exact (floor (expt 1.8 defection-count)))))
+    ; should maybe be (zip (append x '(-1)) (cons -1 y)) - current version compares actions at the same time, but it may not be "betrayal" unless the defecting by the opponent comes AFTER our cooperating
+    ; this does seem to worsen its score so maybe not
     (result (if (member '(1 0) (take lookback (zip x y))) 1 0))
   ) result)))
 
 (define apiomemetics
-  (lambda (x y) (random-seed 334278294) ; NOTE TO SELF: 3227883998 (0/1)
+  (lambda (x y) (random-seed 334278294) ; NOTE TO SELF: 3227883998 (0/2) or 2324865786 (48/50) 
     (if (null? x)
         (begin 0)
         (if (> (length x) 93)

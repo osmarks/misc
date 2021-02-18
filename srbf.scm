@@ -1,5 +1,5 @@
 (define count-zeros
-  (lambda (x) (if (= (random 50) 0) (count-zeros (+ 1 x)) x)))
+  (lambda (x) (if (= (random 50) 48) (count-zeros (+ 1 x)) x)))
 (define try-sequentially (lambda (x max) 
   (random-seed x)
   (let ((zeros (count-zeros 0))) (if (> zeros max)
