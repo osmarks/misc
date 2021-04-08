@@ -107,7 +107,6 @@ struct CLIOptions {
 
 fn main() {
     let opts = CLIOptions::parse_args_default_or_exit();
-    println!("{:?}", opts);
 
     let mut rng = match opts.seed {
         Some(seed) => nanorand::WyRand::new_seed(seed),
