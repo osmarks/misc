@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<title>FractalArt</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    .controls input, .controls button { border: 1px solid black; padding: 0.2em; }
+    #fractalart { display: flex; align-items: flex-start; flex-wrap: wrap; }
+    #status { font-style: italic; }
+    #info { padding-top: 0.5em; font-size: 0.8em; }
+    #out { image-rendering: crisp-edges; }
+</style>
+<div id="fractalart">
+    <canvas id="out" width=512 height=512></canvas>
+    <table class="controls">
+        <tr><td>Lightness:</td><td><input id="lightness" type="number" max="1" min="0" step="0.01" value="0.6"></td></tr>
+        <tr><td>Saturation:</td><td><input id="saturation" type="number" max="1" min="0" step="0.01" value="1.0"></td></tr>
+        <tr><td>Hue:</td><td><input id="hue" type="number" max="360" min="0" step="1" value="0"></td><td>(or random: <input type="checkbox" checked id="hue-random">)</td></tr>
+        <tr><td>Variance:</td><td><input id="variance" type="number" min="0" step="0.25" value="4"></td></tr>
+        <tr><td>Bias:</td><td><input id="bias" type="number" step="0.25" value="0"></td></td></tr>
+        <tr><td>Render Size:</td><td><input id="width" type="number" step="16" value="512"></td></td></tr>
+        <tr><td><button id="generate">Generate</button></td></tr>
+        <tr><td colspan="4" id="status"></td></tr>
+        <tr><td colspan="4"><div id="info">
+            <a href="https://github.com/TomSmeets/FractalArt/">FractalArt</a> for JS.<br>
+            If this is too slow try my <a href="https://github.com/osmarks/random-stuff/tree/master/fractalart-rs">Rust port</a>.<br>
+            This is all contained in one HTML file, so you can save it locally if you want.
+        </div></td></tr>
+    </table>
+</div>
+<script id="fractalart-code">
+    // harvested from github somewhere
+    function hslToRgb(h, s, l) {
+        var r, g, b;
+
+        if (s == 0) {
+            r = g = b = l; // achromatic
+        } else {
+            function hue2rgb(p, q, t) {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+            }
+
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+
+            r = hue2rgb(p, q, h + 1/3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1/3);
+        }
+
+        return [ r * 255, g * 255, b * 255 ];
+    }
+    const randRange = x => Math.floor(Math.random() * x)
+
+    // main fractalart logic
+    // todo: WASM (there is already a perfectly good Rust version...) or just actually optimize this
+    const run = (im, { hue, saturation, lightness, variance, bias }) => {
+        const set = (x, y, offset, value) => { im.data[(y * im.width + x) * 4 + offset] = value }
+        const get = (x, y, offset) => im.data[(y * im.width + x) * 4 + offset]
+        const boundcheck = (x, y) => x >= 0 && y >= 0 && x < im.width && y < im.height
+        const ringAt = (x, y, l) => {
+            let out = []
+            for (let n = -l; n <= l; n++) {
+                out.push([n + x, l + y])
+                out.push([n + x, -l + y])
+            }
+            for (let n = 1 - l; n <= l; n++) {
+                out.push([l + x, n + y])
+                out.push([-l + x, n + y])
+            }
+            return out.filter(([x, y]) => boundcheck(x, y))
+        }
+        const modColorChannel = x => Math.min(Math.max(Math.floor(x + (Math.random() * (variance * 2 + 1)) - variance + bias), 0), 255)
+
+        const startX = randRange(im.width)
+        const startY = randRange(im.height)
+        const iterations = Math.max(startX, im.width - 1 - startX, startY, im.height - 1 - startY)
+        const [sR, sG, sB] = hslToRgb(hue, saturation, lightness)
+        set(startX, startY, 0, Math.floor(sR))
+        set(startX, startY, 1, Math.floor(sG))
+        set(startX, startY, 2, Math.floor(sB))
+        set(startX, startY, 3, 255)
+        for (let iteration = 1; iteration <= iterations; iteration++) {
+            for (const [x, y] of ringAt(startX, startY, iteration)) {
+                const possibleColors = []
+                for (const [ax, ay] of ringAt(x, y, 1)) {
+                    if (get(ax, ay, 3)) {
+                        possibleColors.push([get(ax, ay, 0), get(ax, ay, 1), get(ax, ay, 2)])
+                    }
+                }
+
+                const [chosenR, chosenG, chosenB] = possibleColors[randRange(possibleColors.length)]
+                set(x, y, 0, modColorChannel(chosenR))
+                set(x, y, 1, modColorChannel(chosenG))
+                set(x, y, 2, modColorChannel(chosenB))
+                set(x, y, 3, 255)
+            }
+        }
+
+        postMessage(im)
+    }
+
+    const readInput = name => document.getElementById(name).value
+
+    // detect if not running on webworker
+    if ("document" in self) {
+        const statusDisplay = document.querySelector("#status")
+        let status = "Idle"
+        let startTime = null
+        const updateStatus = s => {
+            if (statusDisplay.firstChild) { statusDisplay.removeChild(statusDisplay.firstChild) }
+            statusDisplay.appendChild(document.createTextNode(s))
+            status = s
+        }
+        const canv = document.querySelector("#out")
+        // TODO things
+        canv.style.width = canv.style.height = Math.min(window.innerHeight - 16, window.innerWidth - 16) + "px"
+        const ctx = canv.getContext("2d")
+        const source = `
+        ${document.querySelector("#fractalart-code").innerHTML}
+        onmessage = e => run(e.data[0], e.data[1])
+        `
+        // be nice to foolish single threaded browsers
+        // offload to worker thread
+        const worker = new Worker(URL.createObjectURL(new Blob([source], {type: 'application/javascript'})))
+        worker.onmessage = e => {
+            const im = e.data
+            canv.width = canv.height = im.width
+            ctx.putImageData(im, 0, 0)
+            updateStatus(`Idle (${Date.now() - startTime}ms)`)
+        }
+        worker.onerror = e => {
+            console.warn(e)
+            updateStatus(e.message)
+        }
+        const generate = () => {
+            if (status !== "Working") {
+                updateStatus("Working")
+                startTime = Date.now()
+                const size = parseInt(readInput("width"))
+                worker.postMessage([ctx.createImageData(size, size), {
+                    hue: document.getElementById("hue-random").checked ? Math.random() : parseFloat(readInput("hue")),
+                    saturation: parseFloat(readInput("saturation")),
+                    lightness: parseFloat(readInput("lightness")),
+                    variance: parseFloat(readInput("variance")),
+                    bias: parseFloat(readInput("bias"))
+                }])
+            }
+        }
+        document.querySelector("#generate").addEventListener("click", generate)
+        generate()
+    }
+</script>

@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 image = { version = "0.23", features = ["png"], default-features = false }
-nanorand = { version = "0.5", features = ["std", "rdseed", "wyrand", "tls"], default-features = false }
+nanorand = { version = "0.5", features = ["std", "rdseed", "wyrand"], default-features = false }
 hsl = "0.1.1"
 gumdrop = "0.8"
 smallvec = "1.4.1"

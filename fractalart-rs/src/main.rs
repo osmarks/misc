@@ -45,7 +45,7 @@ fn mod_channel(rng: &mut WyRand, range: u16, n: u16) -> u16 {
     let rand: u16 = rng.generate::<u16>() % (range * 2 + 2);
     let o = ((n as u32) + (rand as u32)).saturating_sub(range as u32);
     // avoid weird artifacts - just directly using `as` truncates it, i.e. drops the high bytes, which leads to integer-overflow-like issues
-    min(o, 65535) as u16
+    max(min(o, 65535), 1) as u16
 }
 
 // randomly adjust all the channels in a color by `range`
