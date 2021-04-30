@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
             int i = 0;
             double complex z = 0;
             double complex c = x + y * I;
-            for (; i < MAX_ITERS && cabs(z) < 5.0; i++) {
+            for (; i < MAX_ITERS && cabs(z) < 2.0; i++) {
                 z = z*z + c;
             }
             if (i != MAX_ITERS) {
