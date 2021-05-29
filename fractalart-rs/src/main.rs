@@ -84,9 +84,9 @@ fn iter(opts: &CLIOptions, rng: &mut WyRand, im: &mut R16Image, pos: IPos, i: i3
 
 #[derive(Options, Debug)]
 struct CLIOptions {
-    #[options(help = "width of generated image", short = "H", default = "1000")]
+    #[options(help = "width of generated image", short = "W", default = "1000")]
     width: u32,
-    #[options(help = "height of generated image", short = "W", default = "1000")]
+    #[options(help = "height of generated image", short = "H", default = "1000")]
     height: u32,
     #[options(help = "filename to save generated image to", short = "o", default = "./out.png")]
     filename: String,
