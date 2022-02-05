@@ -10,8 +10,8 @@ import struct
 # disk instead of buffering it all in memory list this.  But most sounds will fit in 
 # memory.
 audio = []
-sample_rate = 44100.0
-
+sample_rate = 48000.0
+phase = 0
 
 def append_silence(duration_milliseconds=500):
     num_samples = duration_milliseconds * (sample_rate / 1000.0)
@@ -24,10 +24,12 @@ def append_sinewave(
         freq=440.0, 
         duration_milliseconds=500, 
         volume=1.0):
-    global audio # using global variables isn't cool.
+    global phase
     num_samples = duration_milliseconds * (sample_rate / 1000.0)
+    pc = math.tau * freq / sample_rate
     for x in range(int(num_samples)):
-        audio.append(volume * math.sin(2 * math.pi * freq * ( x / sample_rate )))
+        phase += pc
+        audio.append(volume * math.sin(phase))
 
 def append_squarewave(
         freq=440.0,
@@ -54,11 +56,10 @@ def save_wav(file_name):
     wav_file.close()
     return
 
-#for _ in range(8):
-#    append_sinewave(volume=1.0, freq=1000.0)
-#    append_silence()
-append_sinewave(freq=500, duration_milliseconds=500)
-append_sinewave(freq=1000, duration_milliseconds=500)
-append_sinewave(freq=2000, duration_milliseconds=500)
-append_sinewave(freq=500, duration_milliseconds=500)
+import random
+freq = 6
+for i in range(160):
+    append_sinewave(volume=1.0, freq=math.exp(freq), duration_milliseconds=50)
+    freq += random.uniform(-0.2, 0.2)
+    freq = max(4.5, min(freq, 9))
 save_wav("output.wav")

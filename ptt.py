@@ -11,7 +11,7 @@ import threading
 scriptdir = os.path.dirname(os.path.abspath(sys.argv[0]))
 red, green = os.path.join(scriptdir, "red.png"), os.path.join(scriptdir, "green.png")
 
-l_key = keyboard.KeyCode(65312)
+l_key = keyboard.Key.f8
 source = "alsa_input.usb-0c76_USB_PnP_Audio_Device-00.mono-fallback"
 
 MuteSetEvent, EVT_MUTE_SET_EVENT = wx.lib.newevent.NewEvent()

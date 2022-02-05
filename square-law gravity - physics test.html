@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<meta charset="utf8">
+<canvas id="canvas-but-good" width=768 height=768></canvas>
+<div id="info"></div>
+<script>
+    const canv = document.getElementById("canvas-but-good")
+    const info = document.getElementById("info")
+    const centerX = canv.width / 2
+    const centerY = canv.height / 2
+    const scale = 0.5
+    const G = 0.1
+    
+    const vzero = [0, 0]
+    const vadd = ([a, b], [c, d]) => [a + c, b + d]
+    const vscale = (a, [b, c]) => [a * b, a * c]
+    const vsub = (a, b) => vadd(vscale(-1, a), b)
+    const vmag = ([a, b]) => Math.hypot(a, b)
+    const vnorm = v => vscale(1 / vmag(v), v)
+    const vsum = vs => vs.reduce(vadd, vzero)
+
+    const objects = [] /*[
+        { x: [0.5, 0.25], v: vzero, m: 1 },
+        { x: [-0.25, -0.5], v: vzero, m: 0.5 },
+        { x: [0.25, 0.75], v: vzero, m: 2 }
+    ]*/
+    for (let i = 0; i < (4 * Math.PI); i += Math.PI / 12) {
+        objects.push({ x: [ Math.cos(i), Math.sin(i) ], v: vzero, m: Math.exp(Math.random() - 0.5) })
+    }
+
+    const ctx = canv.getContext("2d")
+    let previousTimestamp = null
+    function step(timestamp) {
+        const previousPreviousTimestamp = previousTimestamp
+        previousTimestamp = timestamp
+        if (!timestamp) {
+            return
+        }
+        const timestep = (timestamp - previousPreviousTimestamp) / 1000
+
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, canv.width, canv.height)
+        
+        var i = 0
+        for (const object of objects) {
+            object.x = vadd(object.x, vscale(timestep, object.v))
+            const F = vsum(objects.filter(x => x !== object).map(x =>
+                vscale(G * (object.m * x.m) * (vmag(vsub(object.x, x.x)) ** 2), vnorm(vsub(object.x, x.x)))
+            ))
+            object.v = vadd(object.v, vscale(timestep, vscale(1 / object.m, F)))
+            //console.log(F, object.x, object.v)
+            ctx.beginPath()
+            const disp = vscale(scale, object.x)
+            ctx.arc(centerX + disp[0] * centerX, centerY + disp[1] * centerY, 4 * Math.cbrt(object.m), 0, 2 * Math.PI, false)
+            ctx.fillStyle = `hsl(${i * 73}deg, 100%, 60%)`
+            ctx.fill()
+            i++
+        }
+
+        info.innerText = "Total E_k is " + objects.map(x => 1/2 * x.m * vmag(x.v) ** 2).reduce((a, b) => a + b).toString()
+
+        requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
+</script>

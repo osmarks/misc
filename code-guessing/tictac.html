@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tic-Tac-Toe</title>
+        <style>
+            .row {
+                width: fit-content;
+                height: 4em;
+            }
+            .layer {
+                margin: 1em;
+                width: fit-content;
+                border: 1px solid black;
+                display: inline-block;
+            }
+            .cell {
+                width: 4em;
+                height: 4em;
+                display: inline-block;
+                border: 1px solid gray;
+            }
+            .cell-1 {
+                background: blue;
+            }
+            .cell-2 { 
+                background: red;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="screen"></div>
+        <div id="controls"><button id="rotate">Rotate View</button></div>
+        <div id="info"></div>
+        <script id="game-logic">
+            var size = 4
+            var gsize = size ** 3
+            var grid = new Uint8Array(gsize)
+            var range = Array(size).fill(null).map((_, index) => index)
+
+            function packCoord([l, r, c]) {
+                return l + r * size + c * size * size
+            }
+
+            function cartesianProduct(xss) {
+                var prods = [[]]
+                for (const xs of xss) {
+                    prods = xs.flatMap(x => prods.map(p => p.concat([x])))
+                }
+                return prods
+            }
+            function rotateArray(xs, by) {
+                return xs.slice(by).concat(xs.slice(0, by))
+            }
+            function zip(xs, ys) {
+                return xs.map((x, i) => [x, ys[i]])
+            }
+            var inPlaneDiagonals = cartesianProduct([[zip(range, range), zip(range, range.map(x => x).reverse())], range]).map(([diag, a]) => diag.map(([b, c]) => [a, b, c]))
+            var throughLayerLines = cartesianProduct([range, range]).map(withinLayerPosition => range.map(i => withinLayerPosition.concat([i]))).concat(inPlaneDiagonals)
+            var winConditions = throughLayerLines.concat(throughLayerLines.map(l => l.map(c => rotateArray(c, 1))), throughLayerLines.map(l => l.map(c => rotateArray(c, 2))))
+
+            function insertDiagonalFrom(row, cell) {
+                var diagonal = []
+                var dirR = row == 0 ? 1 : -1
+                var dirC = cell == 0 ? 1 : -1
+                for (var layer = 0; layer < size; layer++) {
+                    diagonal.push([layer, row, cell])
+                    row += dirR
+                    cell += dirC
+                }
+                winConditions.push(diagonal)
+            }
+            insertDiagonalFrom(0, 0)
+            insertDiagonalFrom(0, size - 1)
+            insertDiagonalFrom(size - 1, 0)
+            insertDiagonalFrom(size - 1, size - 1)
+            winConditions = winConditions.map(w => w.map(packCoord))
+
+            function containsWin(grid, real) {
+                outer: for (var winCondition of winConditions) {
+                    var fst = grid[winCondition[0]]
+                    for (var i = 1; i < winCondition.length; i++) {
+                        var val = grid[winCondition[i]]
+                        if (val != fst || val == 0) {
+                            continue outer
+                        }
+                    }
+                    return fst
+                }
+            }
+
+            function unfilledLineLocation(grid, player) {
+                outer: for (var winCondition of winConditions) {
+                    var count = 0
+                    var last = null
+                    for (var i = 0; i < winCondition.length; i++) {
+                        if (grid[winCondition[i]] === player) {
+                            count++
+                        } else if (grid[winCondition[i]] == 0) {
+                            last = winCondition[i]
+                        } else {
+                            continue outer
+                        }
+                    }
+                    if (count == size - 1) { return last }
+                }
+            }
+
+            function possibleMoves(grid) {
+                var out = []
+                for (var i = 0; i < gsize; i++) {
+                    if (!grid[i]) {
+                        out.push(i)
+                    }
+                }
+                return out
+            }
+
+            function set(grid, cell, val) {
+                var out = new Uint8Array(grid.length)
+                out.set(grid)
+                out[cell] = val
+                return out
+            }
+
+            function otherPlayer(p) {
+                return 3 - p
+            }
+
+            function randomPick(xs) {
+                return xs[Math.floor(xs.length * Math.random())]
+            }
+
+            function runRandomGame(grid, player) {
+                var targetPlayer = player
+                while (true) {
+                    var moves = possibleMoves(grid)
+                    if (moves.length === 0) {
+                        return 0
+                    }
+                    grid = set(grid, randomPick(moves), player)
+                    var winner = containsWin(grid)
+                    if (winner === targetPlayer) {
+                        return 1
+                    } else if (winner === otherPlayer(targetPlayer)) {
+                        return -1
+                    }
+                    player = otherPlayer(player)
+                }
+            }
+
+            function scoreGrid(grid, player) {
+                let score = 0
+                for (let i = 0; i < 100; i++) {
+                    score += runRandomGame(grid, player)
+                }
+                return score
+            }
+
+            function findBestMove(grid, player) {
+                var nextLoc = unfilledLineLocation(grid, player)
+                if (nextLoc != null) { return nextLoc }
+                nextLoc = unfilledLineLocation(grid, otherPlayer(player))
+                if (nextLoc != null) { return nextLoc }
+                
+                var bestscore = -Infinity
+                var best = null
+                var moves = possibleMoves(grid)
+                for (const p of moves) {
+                    var optn = scoreGrid(set(grid, p, player), player)
+                    if (optn > bestscore) {
+                        bestscore = optn
+                        best = p
+                    }
+                }
+                return best
+            }
+        </script>
+        <script>
+            var workerGlue = `
+            onmessage = event => {
+                postMessage(findBestMove(...event.data))
+            }
+            `
+            var worker = new Worker(`data:application/javascript;base64,${btoa(document.getElementById("game-logic").innerHTML + workerGlue)}`)
+            var screen = document.getElementById("screen")
+            var info = document.getElementById("info")
+            var rotation = 0
+            document.getElementById("rotate").onclick = () => {
+                rotation += 1
+                rotation %= 3
+                render()
+            }
+            var currentPlayer = 1
+
+            function render() {
+                var html = ""
+                for (var l = 0; l < size; l++) {
+                    html += '<div class="layer">'
+                    for (var r = 0; r < size; r++) {
+                        html += '<div class="row">'
+                        for (var c = 0; c < size; c++) {
+                            var coord = packCoord(rotateArray([l, r, c], rotation))
+                            html += `<div class="cell cell-${grid[coord]}" id="cell-${coord}"></div>`
+                        }
+                        html += '</div>'
+                    }
+                    html += '</div>'
+                }
+                screen.innerHTML = html
+                info.innerHTML = `Player ${currentPlayer}'s turn`
+            }
+
+            function reset() {
+                grid = new Uint8Array(gsize)
+                currentPlayer = 1
+                render()
+            }
+
+            function onTurn(move) {
+                grid[move] = currentPlayer
+                currentPlayer = otherPlayer(currentPlayer)
+                render()
+                var winner = containsWin(grid)
+                if (winner != null) {
+                    alert(`${winner} wins!`)
+                    reset()
+                    return true
+                }
+            }
+
+            worker.onmessage = event => {
+                onTurn(event.data)
+            }
+
+            window.onclick = event => {
+                if (currentPlayer != 1) { return }
+                var [start, coord] = event.target.id.split("-")
+                coord = parseInt(coord)
+                if (isNaN(coord) || typeof coord != "number" || start != "cell") { return }
+                if (grid[coord]) { return }
+                if (!onTurn(coord)) {
+                    worker.postMessage([grid, currentPlayer])
+                }
+            }
+            render()
+        </script>
+    </body>
+</html>

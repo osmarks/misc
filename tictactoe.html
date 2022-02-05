@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tic-Tac-Toe</title>
+        <style>
+            .row {
+                width: fit-content;
+                height: 4em;
+            }
+            .layer {
+                margin: 1em;
+                width: fit-content;
+                border: 1px solid black;
+                display: inline-block;
+            }
+            .cell {
+                width: 4em;
+                height: 4em;
+                display: inline-block;
+                border: 1px solid gray;
+            }
+            .cell-1 {
+                background: blue;
+            }
+            .cell-2 { 
+                background: red;
+            }
+            .highlight {
+                background: yellow;
+                width: 50%;
+                height: 50%;
+                top: 25%;
+                left: 25%;
+                position: relative;
+            }
+            .view3d .layer {
+                display: block;
+                margin-bottom: 0;
+                margin-top: 0;
+                transform: rotateX(60deg) rotateZ(-45.8deg);
+                margin-left: 4em;
+            }
+            .view3d .layer + .layer {
+                margin-top: -4em;
+            }
+            .control, .control button, .control select {
+                border: 1px solid black;
+                border-radius: 0;
+                padding: 0.3em;
+            }
+            .control select {
+                transform: translateY(-1px)
+            }
+            #info {
+                font-size: 1.5em;
+                padding: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="screen"></div>
+        <div id="info"></div>
+        <div id="controls">
+            <button id="rotate" class="control">Rotate View</button>
+            <span class="control"><input type="checkbox" name="view3d" id="view3d"><label for="view3d">3D</label></span>
+            <span class="control"><input type="checkbox" name="lineassist" id="lineassist"><label for="lineassist">Line Assist</label></span>
+            <span class="control">
+                <select id="opponent">
+                    <option value="ai1">"AI" v1</option>
+                    <option value="ai2">"AI" v2</option>
+                    <option value="human">Local Human</option>
+                </select>
+                Select Opponent
+            </span>
+        </div>
+        <script id="game-logic">
+            var size = 4
+            var gsize = size ** 3
+            var grid = new Uint8Array(gsize)
+            var range = Array(size).fill(null).map((_, index) => index)
+
+            function packCoord([l, r, c]) {
+                return l + r * size + c * size * size
+            }
+
+            function cartesianProduct(xss) {
+                var prods = [[]]
+                for (const xs of xss) {
+                    prods = xs.flatMap(x => prods.map(p => p.concat([x])))
+                }
+                return prods
+            }
+            function rotateArray(xs, by) {
+                return xs.slice(by).concat(xs.slice(0, by))
+            }
+            function zip(xs, ys) {
+                return xs.map((x, i) => [x, ys[i]])
+            }
+            var inPlaneDiagonals = cartesianProduct([[zip(range, range), zip(range, range.map(x => x).reverse())], range]).map(([diag, a]) => diag.map(([b, c]) => [a, b, c]))
+            var throughLayerLines = cartesianProduct([range, range]).map(withinLayerPosition => range.map(i => withinLayerPosition.concat([i]))).concat(inPlaneDiagonals)
+            var winConditions = throughLayerLines.concat(throughLayerLines.map(l => l.map(c => rotateArray(c, 1))), throughLayerLines.map(l => l.map(c => rotateArray(c, 2))))
+
+            function insertDiagonalFrom(row, cell) {
+                var diagonal = []
+                var dirR = row == 0 ? 1 : -1
+                var dirC = cell == 0 ? 1 : -1
+                for (var layer = 0; layer < size; layer++) {
+                    diagonal.push([layer, row, cell])
+                    row += dirR
+                    cell += dirC
+                }
+                winConditions.push(diagonal)
+            }
+            insertDiagonalFrom(0, 0)
+            insertDiagonalFrom(0, size - 1)
+            insertDiagonalFrom(size - 1, 0)
+            insertDiagonalFrom(size - 1, size - 1)
+            winConditions = winConditions.map(w => w.map(packCoord))
+
+            var lineLookup = Array(gsize).fill(null).map((_, index) => winConditions.map((w, c) => [w, c]).filter(([w, c]) => w.includes(index)).map(x => x[0]))
+
+            function containsWin(grid, last) {
+                outer: for (var winCondition of (last ? lineLookup[last] : winConditions)) {
+                    var fst = grid[winCondition[0]]
+                    for (var i = 1; i < winCondition.length; i++) {
+                        var val = grid[winCondition[i]]
+                        if (val != fst || val == 0) {
+                            continue outer
+                        }
+                    }
+                    return fst
+                }
+            }
+
+            function unfilledLineLocation(grid, player, last) {
+                outer: for (var winCondition of (last ? lineLookup[last] : winConditions)) {
+                    var count = 0
+                    var last = null
+                    for (var i = 0; i < winCondition.length; i++) {
+                        if (grid[winCondition[i]] === player) {
+                            count++
+                        } else if (grid[winCondition[i]] == 0) {
+                            last = winCondition[i]
+                        } else {
+                            continue outer
+                        }
+                    }
+                    if (count == size - 1) { return last }
+                }
+            }
+
+            // heuristic score for minmax - rate position based on difference in uncontested lines
+            function heuristicScore(grid, player) {
+                var self = 0
+                var other = 0
+                outer: for (var winCondition of winConditions) {
+                    var count = 0
+                    var fst = null
+                    for (var i = 0; i < winCondition.length; i++) {
+                        var val = grid[winCondition[i]]
+                        if (val != 0) {
+                            if (!fst) {
+                                fst = val
+                            }
+                            if (val != fst) {
+                                continue outer
+                            } else {
+                                count++
+                            }
+                        }
+                    }
+                    if (count > 0) {
+                        if (fst === player) {
+                            self += 1 << count
+                        } else {
+                            other += 1 << count
+                        }
+                    }
+                }
+                return self - other
+            }
+
+            function possibleMoves(grid) {
+                var out = []
+                for (var i = 0; i < gsize; i++) {
+                    if (!grid[i]) {
+                        out.push(i)
+                    }
+                }
+                return out
+            }
+
+            function set(grid, cell, val) {
+                var out = new Uint8Array(grid.length)
+                out.set(grid)
+                out[cell] = val
+                return out
+            }
+
+            function otherPlayer(p) {
+                return 3 - p
+            }
+
+            function randomPick(xs) {
+                return xs[Math.floor(xs.length * Math.random())]
+            }
+
+            function hash(ar, seed=0) {
+                let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed
+                for (let i = 0, ch; i < ar.length; i++) {
+                    ch = ar[i]
+                    h1 = Math.imul(h1 ^ ch, 2654435761)
+                    h2 = Math.imul(h2 ^ ch, 1597334677)
+                }
+                h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909)
+                //h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909)
+                return /*4294967296 * (2097151 & h2) + */(h1>>>0)
+            }
+
+            function runRandomGame(grid, player) {
+                var targetPlayer = player
+                while (true) {
+                    var moves = possibleMoves(grid)
+                    if (moves.length === 0) {
+                        return 0
+                    }
+                    var move = randomPick(moves)
+                    grid = set(grid, move, player)
+                    var winner = containsWin(grid, move)
+                    if (winner === targetPlayer) {
+                        return 1
+                    } else if (winner === otherPlayer(targetPlayer) || unfilledLineLocation(grid, otherPlayer(player), move)) {
+                        return -1
+                    }
+                    player = otherPlayer(player)
+                }
+            }
+
+            function scoreGrid(grid, player) {
+                let score = 0
+                for (let i = 0; i < 128; i++) {
+                    score += runRandomGame(grid, player)
+                }
+                return score
+            }
+
+            function brokenMctsPolicy(grid, player) {
+                // hardcoded limited nonstupidity
+                var nextLoc = unfilledLineLocation(grid, player)
+                if (nextLoc != null) { return nextLoc }
+                nextLoc = unfilledLineLocation(grid, otherPlayer(player))
+                if (nextLoc != null) { return nextLoc }
+                
+                var bestscore = -Infinity
+                var best = null
+                var moves = possibleMoves(grid)
+                for (const p of moves) {
+                    var optn = scoreGrid(set(grid, p, player), player)
+                    if (optn > bestscore) {
+                        bestscore = optn
+                        best = p
+                    }
+                }
+                return best
+            }
+
+            function minimax(grid, depth, forPlayer, maximizingPlayer, alpha, beta, last=null) {
+                var winner = containsWin(grid, last)
+                if (winner) {
+                    return winner === forPlayer ? 100000 : -100000
+                }
+                if (depth === 0) {
+                    return heuristicScore(grid, forPlayer)
+                }
+                var moves = possibleMoves(grid)
+                if (moves.length === 0) { // draw
+                    return 99999
+                }
+                if (maximizingPlayer) {
+                    var value = -Infinity
+                    for (var move of moves) {
+                        value = Math.max(value, minimax(set(grid, move, forPlayer), depth - 1, forPlayer, false, alpha, beta, move))
+                        if (value >= beta) {
+                            break
+                        }
+                        alpha = Math.max(alpha, value)
+                    }
+                    return value
+                }
+                else {
+                    value = Infinity
+                    for (var move of moves) {
+                        value = Math.min(value, minimax(set(grid, move, otherPlayer(forPlayer)), depth - 1, forPlayer, true, alpha, beta, move))
+                        if (value <= alpha) {
+                            break
+                        }
+                        beta = Math.min(beta, value)
+                    }
+                    return value
+                }
+            }
+
+            function minimaxPolicy(grid, player) {
+                var best = -Infinity
+                var optn = null
+                for (var move of possibleMoves(grid)) {
+                    var r = minimax(set(grid, move, player), 3, player, false, -Infinity, Infinity)
+                    if (r > best) {
+                        optn = move
+                        best = r
+                    }
+                }
+                return optn
+            }
+
+            var policies = {
+                ai1: brokenMctsPolicy,
+                ai2: minimaxPolicy
+            }
+        </script>
+        <script>
+            // copyright (2022 CE) © © © osmarks.net hypercomputational tetrational metahexagonal industrial - unsigned integer division
+            var workerGlue = `
+            onmessage = event => {
+                var [policy, ...args] = event.data
+                postMessage(policies[policy](...args))
+            }
+            `
+            var highlight = new Uint8Array(gsize)
+            var worker = new Worker(`data:application/javascript;base64,${btoa(document.getElementById("game-logic").innerHTML + workerGlue)}`)
+            var screen = document.getElementById("screen")
+            var info = document.getElementById("info")
+            var rotation = 0
+            document.getElementById("rotate").onclick = () => {
+                rotation += 1
+                rotation %= 3
+                render()
+            }
+            
+            function set3D() {
+                if (document.getElementById("view3d").checked) {
+                    screen.classList.add("view3d")
+                } else {
+                    screen.classList.remove("view3d")
+                }
+            }
+
+            document.getElementById("view3d").onclick = set3D
+            set3D()
+
+            var currentPlayer = 1
+
+            var gameOver = false
+
+            function render() {
+                var html = ""
+                for (var l = 0; l < size; l++) {
+                    html += '<div class="layer">'
+                    for (var r = 0; r < size; r++) {
+                        html += '<div class="row">'
+                        for (var c = 0; c < size; c++) {
+                            var coord = packCoord(rotateArray([l, r, c], rotation))
+                            var hl = ""
+                            if (highlight[coord]) {
+                                hl = `<div class="highlight" style="background: hsl(${highlight[coord] * 20 + 40}deg, 100%, 60%)"></div>`
+                            }
+                            html += `<div class="cell cell-${grid[coord]}" id="cell-${coord}">${hl}</div>`
+                        }
+                        html += '</div>'
+                    }
+                    html += '</div>'
+                }
+                screen.innerHTML = html
+                if (!gameOver) info.innerHTML = `Player ${currentPlayer}'s turn`
+            }
+
+            function reset() {
+                gameOver = false
+                grid = new Uint8Array(gsize)
+                currentPlayer = 1
+                render()
+            }
+
+            var opponent = document.querySelector("#opponent")
+
+            function opponentIsAI() {
+                return opponent.value.startsWith("ai")
+            }
+
+            function onTurn(move) {
+                if (gameOver) return true
+                grid[move] = currentPlayer
+                currentPlayer = otherPlayer(currentPlayer)
+                render()
+                var winner = containsWin(grid)
+                var isDraw = possibleMoves(grid).length === 0
+                if (winner != null || isDraw) {
+                    setTimeout(() => {
+                        if (winner) {
+                            info.innerHTML = `${winner} wins! Click to reset.`
+                        } else {
+                            info.innerHTML = "Draw! Click to reset."
+                        }
+                        var el = () => {
+                            reset()
+                            info.removeEventListener("click", el)
+                        }
+                        info.addEventListener("click", el)
+                        gameOver = true
+                    })
+                    return true
+                }
+            }
+
+            function findTarget(ev) {
+                var target = ev.target
+                if (target.classList.contains("highlight")) {
+                    return target.parentNode
+                } else {
+                    return target
+                }
+            }
+
+            worker.onmessage = event => {
+                onTurn(event.data)
+            }
+
+            var holdHighlight = false
+
+            screen.onmousemove = event => {
+                var [start, coord] = findTarget(event).id.split("-")
+                var coord = parseInt(coord)
+                if (holdHighlight) {
+                    if (event.shiftKey) {
+                        holdHighlight = !holdHighlight
+                    }
+                    return
+                }
+                highlight = new Uint8Array(gsize)
+                if (!isNaN(coord) && typeof coord == "number" && start == "cell" && document.getElementById("lineassist").checked) {
+                    highlight = new Uint8Array(gsize)
+                    for (var [line, id] of lineLookup[coord].map((x, i) => [x, i])) {
+                        for (var pos of line) {
+                            highlight[pos] = id + 1
+                        }
+                    }
+                }
+                if (event.shiftKey) {
+                    holdHighlight = true
+                }
+                render()
+                return
+            }
+
+            screen.onclick = event => {
+                if (gameOver) return
+                holdHighlight = false
+                if (currentPlayer != 1 && opponentIsAI()) { return }
+                var [start, coord] = findTarget(event).id.split("-")
+                var coord = parseInt(coord)
+                if (isNaN(coord) || typeof coord != "number" || start != "cell") { return }
+                if (grid[coord]) { return }
+                if (!onTurn(coord) && opponentIsAI()) {
+                    worker.postMessage([opponent.value, grid, currentPlayer])
+                }
+            }
+            render()
+        </script>
+    </body>
+</html>

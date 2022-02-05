@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<input type="text" id="text">
+<button id="send">do thing</button>
+<button id="recv">do thing 2</button>
+<canvas id="vis" style="width: 100%; height: 20em; "></canvas>
+<script>
+    const ctx = new AudioContext()
+    const encoder = new TextEncoder()
+    const visCanvas = document.querySelector("#vis")
+    const transmit = bytes => {
+        const tones = Array.from(bytes).flatMap(x => [x >> 6, x >> 4 & 3, x >> 2 & 3, x & 3])
+        console.log(tones)
+        let pos = 0
+        const oscillator = ctx.createOscillator()
+        oscillator.connect(ctx.destination)
+        oscillator.start()
+        const interval = setInterval(() => {
+            const tone = tones[pos]
+            oscillator.frequency.value = [200, 400, 600, 800][tone]
+            pos++
+            if (pos == tones.length) {
+                oscillator.stop()
+                oscillator.disconnect()
+                clearInterval(interval)
+            }
+        }, 500)
+    }
+    const analyzer = ctx.createAnalyser()
+    //analyzer.smoothingTimeConstant = 0
+    const CWIDTH = 512
+    const CWIDTH_MINUS_ONE = 511
+    const cctx = visCanvas.getContext("2d")
+    let q = 0;
+    const visualizerLoop = () => {
+            const w = analyzer.frequencyBinCount
+            const frequencyData = new Uint8Array(w)
+            analyzer.getByteFrequencyData(frequencyData)
+            const im = cctx.getImageData(1, 0, CWIDTH, w)
+            let max = -1;
+            let maxIndex = -1;
+            for (let i = 0; i < w; i++) {
+                    im.data[(i * CWIDTH + CWIDTH_MINUS_ONE) * 4 + 3] = 255
+                    im.data[(i * CWIDTH + CWIDTH_MINUS_ONE) * 4 + 1] = frequencyData[i]
+                    if (frequencyData[i] > max) {
+                        max = frequencyData[i]
+                        maxIndex = i
+                    }
+            }
+            console.log((maxIndex + 1) / w * 24000)
+            cctx.putImageData(im, 0, 0)
+            q++
+            requestAnimationFrame(visualizerLoop)
+    }
+    document.querySelector("#send").addEventListener("click", () => {
+        transmit(encoder.encode(document.querySelector("#text").value))
+    })
+    document.querySelector("#recv").addEventListener("click", () => {
+        navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream => {
+            console.log(stream)
+            const node = ctx.createMediaStreamSource(stream)
+            node.connect(analyzer)
+            visCanvas.height = analyzer.frequencyBinCount
+            visCanvas.width = CWIDTH
+            cctx.fillStyle = "black"
+            cctx.fillRect(0, 0, CWIDTH, analyzer.frequencyBinCount)
+            requestAnimationFrame(visualizerLoop)
+        })
+    })
+</script>
