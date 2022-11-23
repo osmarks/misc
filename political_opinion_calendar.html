@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/mithril/mithril.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/1.30.1/date_fns.min.js"></script>
+<style>
+    .calday {
+        padding: 1em;
+        margin: 0;
+        border: none;
+    }
+    table {
+        border-collapse: collapse;
+    }
+    .opinion {
+        font-style: italic;
+    }
+</style>
+<div id="app">
+
+</div>
+<script>
+    var month = 6
+    var year = 2022
+    var opinions = []
+
+    const hash = (str, seed = 0) => {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i)
+            h1 = Math.imul(h1 ^ ch, 2654435761)
+            h2 = Math.imul(h2 ^ ch, 1597334677)
+        }
+        h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909)
+        h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909)
+        return 4294967296 * (2097151 & h2) + (h1>>>0)
+    }
+
+    function incMonth(by) {
+        month += by
+        if (month < 1) {
+            month = 12 - month
+            year--
+        } else if (month > 12) {
+            month = month - 12
+            year++
+        }
+    }
+
+    function displayMonth(year, month) {
+        var opinionLookup = []
+        for (const opinion of opinions) {
+            for (var i = 0; i < opinion.weight; i++) {
+                opinionLookup.push(opinion.opinion)
+            }
+        }
+        console.log(opinionLookup)
+
+        var init = dateFns.addMonths(dateFns.addYears(0, year - 1970), month - 1)
+        var offset = dateFns.getDay(init) - 1
+        var weekinit = dateFns.subDays(init, offset >= 0 ? offset : 6)
+        console.log(init, dateFns.getDay(init), weekinit)
+        var rows = [
+            m("tr.calweek.calhead", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(x => m("th.calday", x)))
+        ]
+        outer: for (var i = 0; i < 6; i++) {
+            var row = []
+            for (var j = 0; j < 7; j++) {
+                var x = dateFns.addDays(dateFns.addWeeks(weekinit, i), j)
+                console.log(x, init, dateFns.getMonth(x), month)
+                if (x > init && dateFns.getMonth(x) + 1 !== month && dateFns.getDate(x) >= 7) { break outer }
+                var opindex = hash(`${dateFns.getYear(x)}-${dateFns.getMonth(x)}-${dateFns.getDate(x)}`) % opinionLookup.length
+                var opinion = opinionLookup.length > 0 ? opinionLookup[opindex] : "no opinion"
+                row.push(m("td.calday", { style: `background: hsl(${hash(opinion) % 360}deg, 100%, 60%); opacity: ${dateFns.getMonth(x) + 1 === month ? "1": "0.5"}`  }, [
+                    m(".date", dateFns.getDate(x)),
+                    m(".opinion", opinion)
+                ]))
+            }
+            rows.push(m("tr.calweek", row))
+        }
+        return rows
+    }
+
+    m.mount(document.querySelector("#app"), {
+        view: function() {
+            return [
+                m("", [
+                    m("h1", "Calendar"),
+                    m("h2", `${year}-${month}`),
+                    m("button", { onclick: () => incMonth(-1) }, "-"),
+                    m("button", { onclick: () => incMonth(1) }, "+"),
+                    m("table", displayMonth(year, month))
+                ]),
+                m("", [
+                    m("h1", "Political Opinions"),
+                    m("ul", 
+                        opinions.map((opinion, index) => m("li", [
+                            m("button", { onclick: () => opinions.splice(index, 1) }, "-"),
+                            m("input[type=number]", { value: opinion.weight, min: 1, max: 100, oninput: ev => opinions[index].weight = Math.min(ev.target.value, 100) }),
+                            m("input", { value: opinion.opinion, oninput: ev => opinions[index].opinion = ev.target.value })
+                        ]))
+                    ),
+                    m("button", { onclick: () => opinions.push({ opinion: "", weight: 1 }) }, "+")
+                ])
+            ]
+        }
+    })
+</script>

@@ -56,7 +56,10 @@
             i++
         }
 
-        info.innerText = "Total E_k is " + objects.map(x => 1/2 * x.m * vmag(x.v) ** 2).reduce((a, b) => a + b).toString()
+        const E_k = objects.map(x => 1/2 * x.m * vmag(x.v) ** 2).reduce((a, b) => a + b)
+        // extra division by 2 due to double-counting
+        const E_p = objects.map(o1 => objects.filter(o2 => o2 !== o1).map(o2 => 1/6 * o1.m * o2.m * G * (vmag(vsub(o1.x, o2.x)) ** 3)).reduce((a, b) => a + b)).reduce((a, b) => a + b)
+        info.innerHTML = `E<sub>k</sub>=${E_k.toFixed(2)}<br>E<sub>p</sub>=${E_p.toFixed(2)}<br>sum=${E_k+E_p}`
 
         requestAnimationFrame(step)
     }

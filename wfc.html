@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<canvas id="canv"></canvas>
+<input type="file" id="file">
+<div id="out"></div>
+<button id="step">Step</button>
+<script>
+    const write = line => {
+        const out = document.querySelector("#out")
+        out.appendChild(document.createTextNode(line))
+        out.appendChild(document.createElement("br"))
+    }
+
+    const PX = 16
+    const W = 16
+    const RANGE = 10
+    const ctx = document.querySelector("canvas").getContext("2d")
+    ctx.canvas.width = PX * W
+    ctx.canvas.height = PX * W
+
+    let grid = Array(W * W).fill(null).map(x => ({ value: null, options: new Set(Array(RANGE).fill(null).map((_, ix) => ix)) }))
+    const map = ([x, y]) => x + y * W
+    const unmap = a => [a % W, Math.floor(a / W)]
+    const vsum = ([a, b], [c, d]) => [a + c, b + d]
+    const adj = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+    const inRange = p => p >= 0 && p < grid.length
+    const modclamp = x => x < 0 ? 10 + x : x % 10
+
+    const updatePos = (pos, value) => {
+        grid[map(pos)].value = value
+        console.log(value)
+        grid[map(pos)].options = null
+        for (const a of adj) {
+            const n = map(vsum(a, pos))
+            if (inRange(n) && grid[n].value === null) {
+                for (const offset of [-1, 0, 1, 2, -2, 3, -3]) {
+                    grid[n].options.delete(modclamp(offset + value))
+                }
+            }
+        }
+    }
+    const findBestCandidates = grid => grid.reduce(([bestQty, bestPos], val, index) => {
+        if (val.value !== null) {
+            return [bestQty, bestPos]
+        }
+        if (val.options.size < bestQty) {
+            return [val.options.size, [unmap(index)]]
+        }
+        if (val.options.size == bestQty) {
+            bestPos.push(unmap(index))
+        }
+        return [bestQty, bestPos]
+    }, [RANGE, []])
+    const render = grid => {
+        for (let x = 0; x < W; x++) {
+            for (let y = 0; y < W; y++) {
+                const data = grid[map([x, y])]
+                const level = data.options && Math.floor(data.options.size / RANGE * 255).toString(16).padStart(2, "0")
+                ctx.fillStyle = data.value !== null ? `#0000${Math.floor(data.value / RANGE * 255).toString(16).padStart(2, "0")}` : `#${level}${level}${level}`
+                ctx.fillRect(x * PX, y * PX, PX, PX)
+            }
+        }
+    }
+
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)]
+
+    render(grid)
+
+    step.onclick = () => {
+        const [qty, pos] = findBestCandidates(grid)
+        if (qty === 0) {
+            write("contradiction")
+            return
+        }
+        write(`${qty} options on ${pos.length} tiles`)
+        if (qty === 1) {
+            write("resolving")
+            for (const p of pos) {
+                const newValue = Array.from(grid[map(p)].options)[0]
+                console.log(newValue)
+                updatePos(p, newValue)
+            }
+        } else {
+            const p = pick(pos)
+            console.log(p, map(p), grid[map(p)])
+            const newValue = pick(Array.from(grid[map(p)].options))
+            console.log(newValue)
+            updatePos(p, newValue)
+        }
+        render(grid)
+    }
+
+    window.file.oninput = ev => {
+        const file = e.target.files[0]
+        const url = URL.createObjectURL(file)
+        const img = new Image()
+        
+        img.onload = function() {
+            URL.revokeObjectURL(img.src)
+            c.getContext("2d").drawImage(img, 0, 0)
+        }
+
+        img.src = url 
+    }
+</script>
