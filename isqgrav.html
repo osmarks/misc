@@ -9,7 +9,6 @@
     const centerY = canv.height / 2
     const scale = 0.5
     const G = 0.1
-    const stepsPerSecond = 1000
     
     const vzero = [0, 0]
     const vadd = ([a, b], [c, d]) => [a + c, b + d]
@@ -24,7 +23,7 @@
         { x: [-0.25, -0.5], v: vzero, m: 0.5 },
         { x: [0.25, 0.75], v: vzero, m: 2 }
     ]*/
-    for (let i = 0; i < (4 * Math.PI); i += Math.PI / 12) {
+    for (let i = 0; i < (1.99 * Math.PI); i += Math.PI / 12) {
         objects.push({ x: [ Math.cos(i), Math.sin(i) ], v: vzero, m: Math.exp(Math.random() - 0.5) })
     }
 
@@ -36,27 +35,18 @@
         if (!timestamp) {
             return
         }
-        const deltaT = (timestamp - previousPreviousTimestamp) / 1000
-        const stepCount = Math.min(Math.ceil(deltaT * stepsPerSecond), 20)
-        const timestep = deltaT / stepCount
-        console.log(stepCount, deltaT)
-
-        for (let j = 0; j < stepCount; j++) {
-            for (const object of objects) {
-                object.x = vadd(object.x, vscale(timestep, object.v))
-                const F = vsum(objects.filter(x => x !== object).map(x =>
-                    vscale(G * (object.m * x.m) * (vmag(vsub(object.x, x.x)) ** 2), vnorm(vsub(object.x, x.x)))
-                ))
-                object.v = vadd(object.v, vscale(timestep, vscale(1 / object.m, F)))
-                //console.log(F, object.x, object.v)
-            }
-        }
+        const timestep = (timestamp - previousPreviousTimestamp) / 1000
 
         ctx.fillStyle = "black"
         ctx.fillRect(0, 0, canv.width, canv.height)
         
         var i = 0
         for (const object of objects) {
+            object.x = vadd(object.x, vscale(timestep, object.v))
+            const F = vsum(objects.filter(x => x !== object).map(x =>
+                vscale(G * (object.m * x.m) * (vmag(vsub(object.x, x.x)) ** -2), vnorm(vsub(object.x, x.x)))
+            ))
+            object.v = vadd(object.v, vscale(timestep, vscale(1 / object.m, F)))
             //console.log(F, object.x, object.v)
             ctx.beginPath()
             const disp = vscale(scale, object.x)
@@ -68,7 +58,7 @@
 
         const E_k = objects.map(x => 1/2 * x.m * vmag(x.v) ** 2).reduce((a, b) => a + b)
         // extra division by 2 due to double-counting
-        const E_p = objects.map(o1 => objects.filter(o2 => o2 !== o1).map(o2 => 1/6 * o1.m * o2.m * G * (vmag(vsub(o1.x, o2.x)) ** 3)).reduce((a, b) => a + b)).reduce((a, b) => a + b)
+        const E_p = objects.map(o1 => objects.filter(o2 => o2 !== o1).map(o2 => -1/2 * o1.m * o2.m * G * (vmag(vsub(o1.x, o2.x)) ** -1)).reduce((a, b) => a + b)).reduce((a, b) => a + b)
         info.innerHTML = `E<sub>k</sub>=${E_k.toFixed(2)}<br>E<sub>p</sub>=${E_p.toFixed(2)}<br>sum=${E_k+E_p}`
 
         requestAnimationFrame(step)
