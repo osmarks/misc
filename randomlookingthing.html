@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<h1>changed version</h1>
+<input type="number" id="w" min="0" value="8" placeholder="width">
+<input type="number" id="h" min="0" value="8" placeholder="height">
+<input type="range" id="d" min="0" max="1" step="0.0001" value="0.1" placeholder="density">
+<button id="run">run</button>
+<br>
+<canvas id="out"></canvas>
+<script>
+    const pixels = 32
+    const zipWith = (f, xs, ys) => xs.map((x, i) => f(x, ys[i]))
+    const sum = xs => xs.reduce((a, y) => a + y, 0)
+    const vecAdd = (a, b) => zipWith((x, y) => x + y, a, b)
+    const hadamardProduct = (a, b) => zipWith((x, y) => x * y, a, b)
+    const scalarMult = (a, n) => a.map(x => x * n)
+    const dotProduct = (a, b) => sum(hadamardProduct(a, b))
+    const vecLength = a => Math.sqrt(sum(a.map(x => x ** 2)))
+    const normalize = a => scalarMult(a, 1/vecLength(a))
+    const vsub = (x, y) => vecAdd(x, scalarMult(y, -1))
+    const clampDim = (a, i, min, max) => {
+        if (a[i] >= max) {
+            a[i] = min + a[i] - max
+        }
+        if (a[i] <= min) {
+            a[i] = max - (min - a[i])
+        }
+    }
+    run.onclick = () => {
+        const width = parseInt(w.value)
+        const height = parseInt(h.value)
+        const geomean = Math.sqrt(width * height)
+        const rdist = 1 / geomean
+        const density = parseFloat(d.value)
+        out.width = width * pixels
+        out.height = height * pixels
+        const ctx = out.getContext("2d")
+        /*
+        let points = Array(Math.floor(width * height * density)).fill(null).map(x => [Math.random(), Math.random()])
+        for (let i = 0; i < 100; i++) {
+            for (let j = 0; j < points.length; j++) {
+                const p = points[j]
+                const v = points.filter((_, k) => k !== j).map(q => { 
+                    const direction = normalize(vsub(p, q))
+                    const distance = vecLength(vsub(p, q))
+                    const magnitude = distance < rdist ? -5 : distance ** -3
+                    return scalarMult(direction, magnitude)
+                }).reduce(vecAdd, [0, 0])
+                clampDim(p, 0, 0, 1)
+                clampDim(p, 1, 0, 1)
+                points[j] = vecAdd(p, scalarMult(v, 0.025))
+            }
+        }
+        console.log(points)*/
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < width; y++) {
+                ctx.fillStyle = /*points.filter(([p, q]) => p >= (x / width) && p <= ((x + 1) / width) && q >= (y / height) && q <= ((y + 1) / height)).length > 0*/ Math.random() < density ? "green" : "black"
+                ctx.fillRect(x * pixels, y * pixels, pixels, pixels)
+            }
+        }
+    }
+</script>

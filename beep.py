@@ -56,10 +56,27 @@ def save_wav(file_name):
     wav_file.close()
     return
 
+BAD_INTERVALS = [6, 8, 10, 11, 13]
+NOTE_FACTOR = pow(2, 1/12)
+LOG_NOTE_FACTOR = math.log(NOTE_FACTOR)
+BASE = 440
+MIN = math.ceil(math.log(200/440) / LOG_NOTE_FACTOR)
+MAX = math.floor(math.log(2000/440) / LOG_NOTE_FACTOR)
+
 import random
-freq = 6
-for i in range(160):
-    append_sinewave(volume=1.0, freq=math.exp(freq), duration_milliseconds=50)
-    freq += random.uniform(-0.2, 0.2)
-    freq = max(4.5, min(freq, 9))
+for i in range(10):
+    """
+    for i in range(3):
+        append_sinewave(800, 100)
+        append_silence(100)
+    append_sinewave(600, 500)
+    append_silence()
+    """
+    note = random.randint(MIN, MAX)
+    while MIN <= note <= MAX:
+        interval = random.choice(BAD_INTERVALS)
+        time = random.randint(50, 1000)
+        append_sinewave(BASE * pow(NOTE_FACTOR, note), time)
+        note += interval if random.choice((True, False)) else -interval
+    
 save_wav("output.wav")

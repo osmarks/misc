@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!-- https://www.researchgate.net/publication/232494603_Can_People_Behave_Randomly_The_Role_of_Feedback -->
+<meta charset="utf8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    #buttons {
+        width: 100%;
+        display: flex;
+    }
+    #buttons button {
+        height: 20rem;
+        width: 100%;
+        margin: 2rem;
+        font-size: 3em;
+    }
+    button {
+        border-radius: 0;
+        border: 1px solid blue;
+        padding: 0.5rem;
+    }
+</style>
+<div id="buttons">
+    <button id="l">L</button>
+    <button id="r">R</button>
+</div>
+<div id="other-controls">
+    <div id="qty"></div>
+    <button id="restart">Restart</button>
+</div>
+<div id="seq"></div>
+<script>
+    var working = true
+    const FINALSEQLEN = 100
+    const tests = {
+        "RNG1": []
+    }
+    var seq = []
+    const push = val => {
+        if (working) {
+            seq.push(val)
+            qty.innerText = `${seq.length}/${FINALSEQLEN}`
+            if (seq.length === FINALSEQLEN) {
+                working = false
+                qty.innerText = "Done"
+            }
+        }
+    }
+    restart.onclick = () => {
+        working = true
+        seq = []
+    }
+    l.onclick = () => push("L")
+    r.onclick = () => push("R")
+    window.onkeypress = ev => {
+        if (ev.key.toLowerCase() == "l" || ev.key == "1") {
+            push("L")
+        } else if (ev.key.toLowerCase() == "r" || ev.key == "2") {
+            push("R")
+        }
+    }
+</script>

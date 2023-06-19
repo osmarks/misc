@@ -1,0 +1,43 @@
+<div id="table"></div>
+<script>
+    const year = 2023
+    const months = [31, 28 + (year % 4 === 0 ? (year % 100 === 0 ? (year % 400 === 0 ? 1 : 0) : 1) : 0), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    const weekdays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    const monthShortnames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nev", "Dec"]
+    const shiftWeekday = x => {
+        if (x === 0) x = 7
+        x -= 1
+        return x
+    }
+    const getWeekday = (y, m, d) => shiftWeekday(new Date(Date.parse(`${y}-${m}-${d}`)).getUTCDay())
+    let cols = 0
+    for (let month = 1; month <= 12; month++) {
+        const len = months[month - 1]
+        const start = getWeekday(year, month, 1)
+        cols = Math.max(cols, len + start)
+    }
+    let html = `<table>`
+    html += `<tr><th>${year}</th>`
+    for (let i = 0; i < cols; i++) {
+        html += `<th>${weekdays[i % 7]}</th>`
+    }
+    html += `</tr>`
+    for (let month = 1; month <= 12; month++) {
+        html += `<tr><th>${monthShortnames[month - 1]}</th>`
+        let start = getWeekday(year, month, 1)
+        for (let i = 0; i < start; i++) {
+            html += `<td></td>`
+        }
+        let mlen = months[month - 1]
+        for (let i = 0; i < mlen; i++) {
+            html += `<td>${(i + 1).toString().padStart(2, "0")}</td>`
+        }
+        for (let i = 0; i < cols - mlen - start; i++) {
+            html += `<td></td>`
+        }
+        html += `</tr>`
+    }
+    
+    html += `</table>`
+    window.table.innerHTML = html
+</script>

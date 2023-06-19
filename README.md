@@ -40,3 +40,13 @@ This comes with absolutely no guarantee of support or correct function, although
 * `discord-message-dump.py`, which reads a GDPR data dump from Discord and copies all the messages in public channels to a CSV file. I used this for training of a GPT-2 instance on my messages (available on request).
 * `spudnet-http.py` - connect to the SPUDNET backend underlying [PotatOS](https://git.osmarks.net/osmarks/potatOS/)'s ~~backdoors~~ remote debugging system via the convenient new HTTP long-polling-based API.
 * `fractalart-rs` - [this](https://github.com/TomSmeets/FractalArt/) in Rust and faster, see its own README for more details.
+* `arbtt_wayland_toplevel.py` - interfaces [arbtt](https://arbtt.nomeata.de/) with Wayland foreign toplevel protocol and idle notifications.
+* `fractalize_image.py` - used for making a profile picture for someone once.
+* `goose2function.py` - converts goose neck profiles extracted from images of geese into activation functions for machine learning.
+* `histretention.py` - dump Firefox `places.sqlite3` into a separate database (Firefox clears out old history internally for performance reasons or something like that) for later search.
+* `memeticize.py` - the script I use to process memes from a large directory of heterogenous files.
+* `rng_trainer.html` - a very unfinished attempt to implement a paper I found on training high-quality random number generation.
+* `smtp2rss.py` - bridge SMTP (inbound emails) to RSS.
+* `yearbox.html` - DokuWiki-type yearbox prototype for Minoteaur (I think this actually contains an off-by-one error somewhere; it isn't what's actually in use).
+* `arbitrary-politics-graphs` - all you need to run your own election campaign.
+* `heavbiome` - some work on biome generation with Perlin noise.

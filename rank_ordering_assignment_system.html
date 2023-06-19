@@ -1,0 +1,116 @@
+<body>
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
+    <script>
+        let people = 3
+        let info = []
+        let pointsForRank = ""
+
+        const regenerateInfo = () => {
+            if (info.length > people) {
+                info = info.slice(0, people)
+            }
+            if (info.length < people) {
+                info = JSON.parse(JSON.stringify(info.concat(new Array(people - info.length).fill({ rank: "", weighting: 1 }))))
+            }
+        }
+
+        regenerateInfo()
+
+        const changeCount = ev => {
+            people = parseInt(ev.target.value)
+            regenerateInfo()
+        }
+
+        const permutations = xs => {
+            if (xs.length === 0) { return [[]] }
+            const result = []
+            for (let i = 0; i < xs.length; i++) {
+                const listWithoutIth = xs.slice(0, i).concat(xs.slice(i + 1))
+                for (const perm of permutations(listWithoutIth)) {
+                    result.push([xs[i]].concat(perm))
+                }
+            }
+            return result
+        }
+        const range = n => new Array(n).fill(null).map((x, i) => i)
+
+        let result = ""
+
+        const targetPerms = 5
+        const solve = () => {
+            const points = pointsForRank.split(",").map(parseFloat)
+            if (points.length !== people) {
+                throw "There must be as many points defined as ranks."
+            } else if (!points.every(x => !isNaN(x))) {
+                throw "Invalid number"
+            }
+            const pointsForPerson = []
+            for (let i = 0; i < info.length; i++) {
+                const inf = info[i]
+                const rankOrder = inf.rank.split(",").map(parseFloat)
+                const sortedCopy = Array.from(rankOrder)
+                sortedCopy.sort((a, b) => a - b)
+                console.log(JSON.stringify(sortedCopy), JSON.stringify(range(people).map(x => x + 1)))
+                if (rankOrder.length !== people) {
+                    throw `Person ${i + 1}'s ranking is too short/long.`
+                } else if (!rankOrder.every(x => !isNaN(x))) {
+                    throw `Person ${i + 1}'s ranking contains an invalid number.`
+                } else if (JSON.stringify(sortedCopy) !== JSON.stringify(range(people).map(x => x + 1))) {
+                    throw `Person ${i + 1}'s ranking is not a valid permutation.`
+                }
+                const newx = new Array(people).fill(null)
+                for (let j = 0; j < people; j++) {
+                    const thingWithJthRank = rankOrder[j] - 1
+                    newx[thingWithJthRank] = inf.weighting * points[j]
+                }
+                pointsForPerson.push(newx)
+            }
+            console.log("got", points, pointsForPerson)
+            let bestPerms = []
+            for (const perm of permutations(range(people))) { // ith person gets perm[i]th thing person
+                const score = perm.map((person, thingIndex) => pointsForPerson[person][thingIndex]).reduce((a, b) => a + b, 0)
+                for (let i = 0; i < bestPerms.length; i++) {
+                    const [otherPerm, otherScore] = bestPerms[i]
+                    if (otherScore < score) {
+                        bestPerms.splice(i, 1)
+                        break
+                    }
+                }
+                if (bestPerms.length < targetPerms) {
+                    bestPerms.push(([perm, score]))
+                }
+            }
+            bestPerms.sort((a, b) => b[1] - a[1])
+            return m("", [
+                "Solutions found:",
+                m("ul", bestPerms.map(([bestPerm, bestScore]) => m("li", bestPerm.map((person, thingIndex) => `Person ${person + 1} gets ${thingIndex + 1}`).join("; ") + ` (${bestScore} points).`)))
+            ])
+        }
+        const solveWrapper = () => {
+            try {
+                result = solve()
+            } catch(e) {
+                console.warn(e)
+                result = e.toString()
+            }
+            
+        }
+
+        m.mount(document.body, {
+            view: function() {
+                return [
+                    m("p", "Rank orders must be given as comma-separated one-indexed integers. The points for each rank must be given as comma-separated real numbers."),
+                    m("input", { value: pointsForRank, placeholder: "Points for ranks", oninput: ev => { pointsForRank = ev.target.value } }),
+                    m("", [ m("label", "People: "), m("input[type=number]", { value: people, oninput: changeCount }) ]),
+                    m("", info.map((i, index) => m("", [ 
+                        m("label", `Person ${index + 1}: `),
+                        m("input", { value: i.rank, placeholder: "Ranking", oninput: ev => { i.rank = ev.target.value } }),
+                        m("label", " Weighting: "), m("input[type=number]", { value: i.weighting, oninput: ev => { i.weighting = parseFloat(ev.target.value) }, step: 0.1 })
+                    ]))),
+                    m("button", { onclick: solveWrapper }, "Solve"),
+                    m("", result)
+                ]
+            }
+        })
+    </script>
+</body>
