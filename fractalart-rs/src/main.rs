@@ -1,4 +1,4 @@
-use image::{Rgb, ImageBuffer, RgbImage};
+use image::{Rgb, ImageBuffer, RgbImage, buffer::ConvertBuffer};
 use std::cmp::{max, min};
 use nanorand::{WyRand, RNG};
 use gumdrop::Options;
@@ -130,10 +130,6 @@ fn main() {
     }
 
     // discard low bits of image pixels before saving, as monitors mostly can't render these and it wastes space
-    let low_color_depth_image = RgbImage::from_fn(w, h, |x, y| {
-        let Rgb([r, g, b]) = im.get_pixel(x, y);
-        Rgb([(r >> 8) as u8, (g >> 8) as u8, (b >> 8) as u8])
-    });
-
+    let low_color_depth_image: RgbImage = im.convert();
     low_color_depth_image.save(&opts.filename).expect("failed to save image");
 }
