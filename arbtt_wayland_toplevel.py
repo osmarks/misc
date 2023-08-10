@@ -6,6 +6,7 @@ from wl_framework.protocols.base import UnsupportedProtocolError
 from wl_framework.protocols.foreign_toplevel import ForeignTopLevel
 from wl_framework.protocols.data_control import DataControl
 from wl_framework.protocols.idle_notify import ( IdleNotifyManager, IdleNotifier as _IdleNotifier )
+from wl_framework.network.connection import WaylandDisconnected
 import asyncio.subprocess as subprocess
 import orjson
 
@@ -108,7 +109,12 @@ if __name__ == '__main__':
 	import asyncio
 	from wl_framework.loop_integrations import AsyncIOIntegration
 
+	# without this, WaylandDisconnected exceptions are thrown forever and problems occur
+	def handler(loop, context):
+		sys.exit(0)
+
 	async def init():
+		asyncio.get_event_loop().set_exception_handler(handler)
 		arbtt_importer = await subprocess.create_subprocess_exec("arbtt-import", "-a", "-t", "JSON", stdin=subprocess.PIPE)
 		loop = AsyncIOIntegration()
 		try:

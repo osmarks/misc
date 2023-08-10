@@ -12,6 +12,7 @@ import json
 import feedparser.sanitizer
 import rfeed
 import base64
+from lxml.html.clean import Cleaner
 
 def now(): return datetime.now(tz=timezone.utc)
 def decode_mime(subject): return str(make_header(decode_header(subject)))
@@ -80,6 +81,26 @@ preference = {
     "text/plain": 1
 }
 
+def clean_html(html):
+    cleaner = Cleaner(
+        page_structure=True,
+        meta=True,
+        embedded=True,
+        links=True,
+        style=False,
+        processing_instructions=True,
+        inline_style=True,
+        scripts=True,
+        javascript=True,
+        comments=True,
+        frames=True,
+        forms=True,
+        annoying_tags=True,
+        remove_unknown_tags=True,
+        safe_attrs_only=True
+    )
+    return cleaner.clean_html(feedparser.sanitizer._sanitize_html(html.replace("<!doctype html>", ""), "utf-8", "text/html"))
+
 def email_to_html(emsg, debug_info=False):
     if isinstance(emsg, Message):
         payload = emsg.get_payload()
@@ -90,14 +111,17 @@ def email_to_html(emsg, debug_info=False):
             else:
                 html = [ email_to_html(thing, debug_info) for thing in payload ]
         else:
-            try:
-                payload = emsg.get_payload(decode=True).decode("utf-8")
-            except:
-                payload = emsg.get_payload(decode=True).decode("latin1")
-            if emsg.get_content_subtype() == "html":
-                html = div(dominate.util.raw(feedparser.sanitizer._sanitize_html(payload.replace("<!doctype html>", ""), "utf-8", "text/html")))
+            if "attachment" in emsg.get("content-disposition", ""):
+                html = div("[attachment]")
             else:
-                html = pre(payload)
+                try:
+                    payload = emsg.get_payload(decode=True).decode("utf-8")
+                except:
+                    payload = emsg.get_payload(decode=True).decode("latin1")
+                if emsg.get_content_subtype() == "html":
+                    html = div(dominate.util.raw(clean_html(payload)))
+                else:
+                    html = pre(payload)
     else:
         html = [ email_to_html(thing, debug_info) for thing in emsg.get_body(list(preference.keys())) ]
     return div([
