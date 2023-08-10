@@ -50,3 +50,4 @@ This comes with absolutely no guarantee of support or correct function, although
 * `yearbox.html` - DokuWiki-type yearbox prototype for Minoteaur (I think this actually contains an off-by-one error somewhere; it isn't what's actually in use).
 * `arbitrary-politics-graphs` - all you need to run your own election campaign.
 * `heavbiome` - some work on biome generation with Perlin noise.
+* `block_scope.py` - Python uses function scoping rather than block scoping. Some dislike this. I made a decorator to switch to block scoping.
