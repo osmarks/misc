@@ -51,3 +51,4 @@ This comes with absolutely no guarantee of support or correct function, although
 * `arbitrary-politics-graphs` - all you need to run your own election campaign.
 * `heavbiome` - some work on biome generation with Perlin noise.
 * `block_scope.py` - Python uses function scoping rather than block scoping. Some dislike this. I made a decorator to switch to block scoping.
+* `mpris_smart_toggle.py` - playerctl play-pause sometimes does not play or pause the media I want played or paused (it seems to use some arbitrary selection order). This does it somewhat better by tracking the last thing which was playing.
