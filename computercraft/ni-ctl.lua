@@ -271,6 +271,9 @@ local function scan_entities()
 		for _, entity in pairs(entities) do
 			entity.s = vector.new(entity.x, entity.y, entity.z)
 			entity.v = vector.new(entity.motionX, entity.motionY, entity.motionZ)
+            if entity.deltaPosX then
+                entity.v = vector.new(entity.deltaPosX, entity.deltaPosY, entity.deltaPosZ)
+            end
 			if entity.displayName ~= username then
 				hud_entities[entity.displayName] = (hud_entities[entity.displayName] or 0) + 1
 			end

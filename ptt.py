@@ -50,7 +50,7 @@ def mute():
 	if not muted:
 		muted = True
 		print("muted")
-		subprocess.run(["pacmd", "set-source-mute", source, "1"])
+		subprocess.run(["pactl", "set-source-mute", source, "1"])
 		# this could call set_icon on the taskbar icon object directly, but that seems to inconsistently cause mysterious crashes in cairo
 		wx.PostEvent(app.taskbar_icon, MuteSetEvent(muted=muted))
 def unmute():
@@ -58,7 +58,7 @@ def unmute():
 	if muted:
 		muted = False
 		print("unmuted")
-		subprocess.run(["pacmd", "set-source-mute", source, "0"])
+		subprocess.run(["pactl", "set-source-mute", source, "0"])
 		wx.PostEvent(app.taskbar_icon, MuteSetEvent(muted=muted))
 
 def toggle():
