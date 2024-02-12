@@ -29,8 +29,163 @@
 </div>
 <div id="seq"></div>
 <script>
+    const error = e => { throw new Error(e) }
+
+    const floatField = {
+        mul: (a, b) => a * b,
+        add: (a, b) => a + b,
+        neg: a => -a,
+        inv: a => 1 / a,
+        zero: 0,
+        unity: 1
+    }
+    const gf2 = {
+        mul: (a, b) => a * b,
+        add: (a, b) => (a + b) % 2,
+        neg: a => a,
+        inv: a => a == 1 ? 1 : error("not invertible"),
+        zero: 0,
+        unity: 1
+    }
+
+    const evalPoly = (poly, x, field) => {
+        let a = field.zero
+        let b = field.unity
+        for (const coef of poly) {
+            a = field.add(field.mul(b, coef))
+            b = field.mul(b, x)
+        }
+        return a
+    }
+    const arrayOf = (n, x) => new Array(n).fill(x)
+
+    const xPowN = (n, field) => arrayOf(n, field.zero).concat([field.unity])
+    const polyField = field => {
+        const unity = [field.unity]
+        const zero = []
+        const add = (a, b) => {
+            const [ap, bp] = a.length > b.length ? [a, b] : [b, a]
+            return ap.map((aix, ix) => field.add(aix, bp[ix] ?? field.zero))
+        }
+        const mul = (a, b) => {
+            const out = arrayOf(a.length + b.length - 1, field.zero)
+            for (let i = 0; i < a.length; i++) {
+                for (let j = 0; j < b.length; j++) {
+                    out[i + j] = field.add(out[i + j], field.mul(a[i], b[j]))
+                }
+            }
+            return out
+        }
+        const neg = a => a.map(field.neg)
+        return {
+            add,
+            mul,
+            neg,
+            unity,
+            zero,
+            inv: () => error("unimplemented")
+        }
+    }
+
+    // blatantly copied from Wikipedia https://en.wikipedia.org/wiki/Berlekamp%E2%80%93Massey_algorithm#Pseudocode
+    const berlekampMassey = (sequence, field) => {
+        const polys = polyField(field)
+        const N = sequence.length
+        let C = polys.unity
+        let B = polys.unity
+
+        let L = 0;
+        let m = 1;
+        
+        let b = field.unity;
+
+        for (let n = 0; n < N; n++) {
+            let d = sequence[n]
+            for (let i = 1; i <= L; i++) {
+                d = field.add(d, field.mul(C[i], sequence[n - i]))
+            }
+            if (d == field.zero) {
+                m += 1
+            } else if (2 * L <= n) {
+                const T = C
+                C = polys.add(C, polys.neg(polys.mul(polys.mul([field.mul(d, field.inv(b))], xPowN(m, field)), B)))
+                L = n + 1 - L
+                B = T
+                b = d
+                m = 1
+            } else {
+                C = polys.add(C, polys.neg(polys.mul(polys.mul([field.mul(d, field.inv(b))], xPowN(m, field)), B)))
+                m += 1
+            }
+        }
+        return C
+    }
+
+    const polyToKey = p => p.join("")
+    const polyRecurrence = (polynomial, sequence) => gf2.mul(gf2.neg(gf2.inv(polynomial[0])), polynomial.slice(1).map((coef, ix) => gf2.mul(coef, sequence[sequence.length - 1 - ix])).reduce(gf2.add, gf2.zero))
+
+    const bmEnsemble = sequence => {
+        const seqlen = 10
+        const polys = new Map()
+        for (let i = 0; i < sequence.length; i++) {
+            const result = berlekampMassey(sequence.slice(i, i + seqlen), gf2)
+            polys.set(polyToKey(result), [1, 2, result])
+        }
+        for (let i = 0; i < sequence.length - 1; i++) {
+            const chunk = sequence.slice(0, i)
+            for (const [polystr, score] of polys.entries()) {
+                const poly = score[2]
+                if (chunk.length >= poly.length - 1) {
+                    const prediction = polyRecurrence(poly, chunk)
+                    if (prediction == sequence[i]) {
+                        score[0] += 1
+                    }
+                    score[1] += 1
+                }
+            }
+        }
+        let max = 0
+        let pred = 0
+        for (const [polystr, score] of polys.entries()) {
+            const bits = score[0] - score[1] - polystr.length
+            //console.log(polystr, bits)
+            const weight = 2**bits
+            max += weight
+            pred += weight * polyRecurrence(score[2], sequence)
+        }
+        console.log("BM", pred / max)
+        return max > 0 ? pred / max > 0.5 : 0
+    }
+
+    const aaronsonPredictor = sequence => {
+        let k = 4
+        const m = new Map()
+        for (let i = 0; i < sequence.length - 1; i++) {
+            const slic = polyToKey(sequence.slice(Math.max(i - k + 1, 0), i + 1))
+            if (!m.get(slic)) m.set(slic, [0, 0])
+            const score = m.get(slic)
+            score[1] += 1
+            score[0] += sequence[i + 1]
+        }
+        var res
+        while (k) {
+            const slic = polyToKey(sequence.slice(-k))
+            if (res = m.get(slic)) {
+                const prob = res[0] / res[1]
+                console.log("AO", prob, slic)
+                return prob > 0.5
+            }
+            k -= 1
+        }
+        return 0
+    }
+
+    let correct = {
+        "aaronson": 0,
+        "bm": 0
+    }
     var working = true
-    const FINALSEQLEN = 100
+    const FINALSEQLEN = 300
     const tests = {
         "RNG1": []
     }
@@ -39,9 +194,18 @@
         if (working) {
             seq.push(val)
             qty.innerText = `${seq.length}/${FINALSEQLEN}`
+            if (seq.length > 0) {
+                correct.bm += bmEnsemble(seq.slice(0, seq.length - 1)) == seq[seq.length - 1] ? 1 : 0
+                correct.aaronson += aaronsonPredictor(seq.slice(0, seq.length - 1)) == seq[seq.length - 1] ? 1 : 0
+            }
             if (seq.length === FINALSEQLEN) {
                 working = false
-                qty.innerText = "Done"
+                let accuracy = ""
+                for (const [name, count] of Object.entries(correct)) {
+                    accuracy += `; ${name} ${count / FINALSEQLEN * 100}%`
+                }
+                qty.innerText = `Done${accuracy}`
+                console.log(correct)
             }
         }
     }
@@ -49,13 +213,13 @@
         working = true
         seq = []
     }
-    l.onclick = () => push("L")
-    r.onclick = () => push("R")
+    l.onclick = () => push(0)
+    r.onclick = () => push(1)
     window.onkeypress = ev => {
         if (ev.key.toLowerCase() == "l" || ev.key == "1") {
-            push("L")
+            push(0)
         } else if (ev.key.toLowerCase() == "r" || ev.key == "2") {
-            push("R")
+            push(1)
         }
     }
 </script>
