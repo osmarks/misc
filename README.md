@@ -54,3 +54,4 @@ This comes with absolutely no guarantee of support or correct function, although
 * `mpris_smart_toggle.py` - playerctl play-pause sometimes does not play or pause the media I want played or paused (it seems to use some arbitrary selection order). This does it somewhat better by tracking the last thing which was playing.
 * `rec_rewrite.py` - in the spirit (and blatantly copypasted code) of `block_scope.py`, rewrite recursive functions as iterative using a heap-allocated stack and generators.
 * `computercraft` - CC(:T) projects - see folder README. Consolidated from Pastebin and various internal records.
+* `rotating_audio.py` - composite audio files such that they sound as if they are from sources orbiting you
