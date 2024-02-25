@@ -1,5 +1,6 @@
 from decimal import Decimal
 import itertools
+import math
 
 def sum_series(series):
     x = Decimal(0)
