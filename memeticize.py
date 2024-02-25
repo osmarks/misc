@@ -1,6 +1,6 @@
 import os, sys, subprocess, datetime
 
-dt_threshold = datetime.datetime(2022, 11, 27).timestamp()
+dt_threshold = datetime.datetime(2023, 6, 16).timestamp()
 
 _, indir, outdir = sys.argv
 for x in os.listdir(indir):
