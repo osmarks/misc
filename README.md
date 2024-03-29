@@ -55,3 +55,6 @@ This comes with absolutely no guarantee of support or correct function, although
 * `rec_rewrite.py` - in the spirit (and blatantly copypasted code) of `block_scope.py`, rewrite recursive functions as iterative using a heap-allocated stack and generators.
 * `computercraft` - CC(:T) projects - see folder README. Consolidated from Pastebin and various internal records.
 * `rotating_audio.py` - composite audio files such that they sound as if they are from sources orbiting you
+* `nn.sql` - half an RNN in SQLite, unfinished because it *apparently* can't do recursive common table expressions.
+* `alexandergriffing_spite.py` - spites sometime by doing bad numerics in Python.
+* `screensaver.html` - an attempt to replicate one of Apple's screensavers (incomplete).
