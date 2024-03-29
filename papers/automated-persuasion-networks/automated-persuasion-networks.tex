@@ -1,0 +1,82 @@
+\documentclass[11pt]{article}
+
+% Thanks to GPT-4-0314 for LaTeX help!
+% Packages
+\usepackage{geometry} % to change the page dimensions
+\geometry{letterpaper}
+\usepackage{graphicx} % support for graphics
+\usepackage{hyperref} % hyperlinks
+\usepackage{amsmath} % advanced math
+\usepackage{amsfonts}
+\usepackage{cite} % bibliography
+\usepackage{nopageno}
+\usepackage [english]{babel}
+\usepackage [autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
+
+\title{Advancing Consensus: Automated Persuasion Networks for Public Belief Enhancement}
+\author{osmarks.net Computational Memetics Division \\ \texttt{\href{mailto:comp.meme@osmarks.net}{comp.meme@osmarks.net}}}
+\date{-1 April 2024}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Incorrect lay beliefs, as produced by disinformation campaigns and otherwise, are an increasingly severe threat to human civilization, as exemplified by the many failings of the public during the COVID-19 pandemic.
+We propose an end-to-end system, based on application of modern AI techniques at scale, designed to influence mass sentiment in a well-informed and beneficial direction.
+\end{abstract}
+
+\section{Introduction}
+
+In today's increasingly complex and rapidly changing world, it is challenging for people to maintain accurate knowledge about more than a small part of the world\cite{Kilov2021}\cite{Crichton2002GellMann}, but it's socially unacceptable or undesirable, and in some cases impossible, to reserve judgment and not proffer an opinion on every topic. As a direct consequence, many have incorrect beliefs, acting on which leads to negative consequences both for themselves and society in general\cite{cicero_deoratore}. This is exacerbated by the increasing prevalence of misinformation, disinformation and malinformation\cite{MaC6453} harming the public's ability to reach truth and make informed, justified decisions. In this hostile environment, attempts to enhance education in critical thinking are insufficiently timely and far-reaching, and a more direct solution is needed.
+
+In this paper, we propose the Automated Persuasion Network, a system for deploying modern large language models (LLMs) to efficiently influence public opinions in desirable directions via social media. We develop an architecture intended to allow selective, effective changes to belief systems by exploiting social conformity.
+
+\section{Methodology}
+
+\subsection{Overview}
+
+Humans derive beliefs and opinions from their perception of the beliefs and opinions of their peer group\cite{Cialdini2004}\cite{Deutsch1955ASO}, as well as a broader perception of what is presently socially acceptable, required or forbidden. Our approach relies on a Sybil attack\cite{6547122} against this social processing, executed by deploying LLMs to emulate people of similar attitudes to targets within the context of online social media platforms. While \cite{bocian2024moral} suggests that social pressure from AIs known to be AIs can be effective, we believe that persuasion by apparent humans is more robust and generalizable, especially since even the perception of automated social interaction has been known to trigger backlash or fear from a wide range of groups\cite{doi:10.1080/0144929X.2023.2276801}\cite{Yan2023}. We automatically derive strategies to affect desired beliefs indirectly, via creating social proof for other related beliefs, using a Bayesian network approach.
+
+Naive implementations of this method involve many manual processing steps --- for instance, identification of targets, construction of personas for LLMs to emulate, and gathering data for belief causal modelling. We replace these with automated solutions based on natural language processing --- unsupervised clustering of internet users using text embeddings, direct evaluation of currently held opinions within a group using LLMs, and surveying simulacra rather than specific extant humans (as described in \cite{Argyle_2023}) --- to allow operation at scale without direct human oversight. This permits much more finely individualized targeting than used in e.g. \cite{10.1093/pnasnexus/pgae035} without additional human labour.
+
+\subsection{Segmentation}
+
+In order to benefit from the effectiveness of persuasive strategies optimized for individuals while still having enough data for reasonable targeting, we apply standard unsupervised clustering techniques. We acquire profile information and a social graph (of friendships and interactions) for all relevant social media accounts, generate text embeddings from each user's profile information, as well as a representative sample of their publicly accessible posts, and combine this with graph embeddings to generate a unified representation. We then apply the OPTICS clustering algorithm\cite{DBLP:conf/sigmod/AnkerstBKS99} to generate a list of clusters.
+
+From these, several pieces of information need to be extracted. We identify the accounts closest to the cluster's centroid and take them as exemplars, and additionally compute the distribution of posting frequency and timings. We use these in later stages to ensure that our personas cannot be distinguished via timing side-channels. Additionally, we generate a set of personas using a variant of QDAIF\cite{bradley2023qualitydiversity}, with a standard instruction-tuned LLM (IT-LLM) used to mutate samples, using the cluster exemplars as the initial seed. As a quality metric, we ask the IT-LLM to evaluate the realism of a persona and its alignment with the exemplars, and we organize our search space into bins using k-means clustering on the generated user sentence embeddings to ensure coverage of all persona types within a cluster.
+
+\subsection{Analysis}
+
+We use a variant of \cite{powell2018}'s methodology to tune persuasion strategies to audiences to effectively affect target beliefs. We replace their manual identification and belief measurement step by using the IT-LLM to first generate a set of beliefs that relate to and/or could plausibly cause the target belief, as well as scales for measuring adherence to these possible beliefs. For measurement, rather than using the IT-LLM as before, we apply a prompt-engineered non-instruction-tuned model (also known as a foundation model, base model or pretrained language model (PT-LLM)). This is because instruction-tuned LLMs are frequently vulnerable to the phenomenon of mode collapse\cite{mysteriesofmodecollapse}\cite{hamilton2024detecting}, in which models fail to generalize over latent variables such as authorship of text. This is incompatible with our need to faithfully simulate a wide range of internet users. Instruction-tuned LLMs are also unsuitable for direct internet-facing deployment, due to the risk of prompt injection\cite{perez2022ignore}. Within each cluster, we use the acquired representative text from each exemplar from the segmentation stage to condition the LLM generations, and then ask several instances the generated questions in a random order. Multiple separate sampling runs are necessary due to the "simulator" nature of LLMs\cite{Shanahan2023}: our persona may not fully constrain its model to a single person with consistent beliefs. Runs producing responses that cannot be parsed into valid responses are discarded.
+
+Given this synthetic data on belief prevalence, we apply a structure learning algorithm to infer causality --- which beliefs cause other beliefs. Unlike \cite{powell2018}, we do not incorporate any prior structure from theory --- due to the additional complexity of applying theories in our automated pipeline, and since our requirements lean more toward predictive accuracy than human interpretability --- and instead apply their BDHC algorithm to generate many candidate graphs, selecting a final model based on a weighted combination of model complexity (number of edges) and likelihood, to combat overfitting.
+
+We then select the beliefs with the greatest estimated contribution to our target belief and direct the IT-LLM to modify our generated personas with the necessary belief adjustment. Due to the aforementioned mode collapse issues, we apply rejection sampling, discarding any generated personas that diverge too far from their original forms (as measured by semantic embedding distance) and regenerating. The resulting personas are used in the next stage.
+
+\subsection{Interaction}
+
+After the completion of the previous stages, the Automated Persuasion Network must interact with humans to cause belief updates. This step requires large-scale inference: however, as most human communication is simple and easy to model, at least over short contexts, we are able to use standard low-cost consumer GPUs running open-weight PT-LLMs, using the vLLM\cite{kwon2023efficient} inference server. As an additional cost-saving measure, we use a multi-tiered system whereby generations are initially run on a small model and, if too complex for it (as measured by perplexity), rerun using a more capable language model.
+
+We use the belief-modified personas generated in the Analysis stage, and attempt to have each of them mimic the actions of a human user in their cluster as much as possible. We identified a number of challenges. Most notably, nonhuman users are frequently detected using posting frequency\cite{howard2016bots} and timings \cite{Duh2018CollectiveBehavior}\cite{PAN2016193}. By using a fairly large set of accounts rather than a single bot, we can avoid detection based on simply noticing anomalously high posting frequencies, and by scheduling generation of new posts and conditionally replying to other users' posts in accordance with cluster statistics for such gathered during the Segmentation stage we can prevent easy timing-based detection. We have not yet identified a complete strategy for avoiding social-graph-based detection such as \cite{6547122}: our present best mitigation is to deploy new personas slowly and to maintain the rate of interaction between them at the base rate within the cluster.
+
+Other difficulties involve technical countermeasures in use against nonhuman users, such as CAPTCHAs and limited APIs. However, while today's most sophisticated CAPTCHAs exceed current AI capabilities, commercial services are available to dispatch solving to humans at very low cost. We are able to mitigate other limitations with the use of commercial residential proxy services and browser automation software for scraping.
+
+\subsection{Monitoring}
+
+In order to determine the efficacy of our approach, we periodically sample posts from human users within each cluster and apply the IT-LLM to rate how much each post entails our target beliefs, allowing measurement of belief change over time.
+
+\section{Results}
+
+No results are available for release at this time.
+
+\section{Discussion}
+
+We believe our architecture represents a major advance in misinformation prevention and public attitude alignment. A promising future direction for research we have identified is introduction of technical enhancements such as implementation of speculative decoding in post generation, as well as use of vision/language models such as \cite{liu2023improved} to allow interaction with multimodal content. We also suggest integration of concepts from LLM agents to reduce distinguishability from humans --- for instance, personas could be given the ability to create new posts based on newly released news articles or information from other social media sites. Finally, while we have primarily focused on human emulation with some limited optimization of persuasive strategies, future AI technology is likely to be capable of more powerful direct persuasion.
+
+% References Section
+\bibliographystyle{apalike}
+\bibliography{references} % references.bib contains your bibliography
+
+\end{document}
