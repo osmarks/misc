@@ -1,5 +1,5 @@
 local function update()
-	local h = http.get "https://pastebin.com/raw/L0ZKLBRG"
+	local h = http.get "https://raw.githubusercontent.com/osmarks/misc/master/computercraft/lms.lua"
 	local f = fs.open(shell.getRunningProgram(), "w")
 	f.write(h.readAll())
 	f.close()
@@ -109,7 +109,7 @@ local function send()
 			if preproc(msg) == "" then
 				print_message "Your message is considered spam."
 			else
-				add_message(msg, username)
+				add_message(msg, username:sub(1, 16))
 				m.transmit(chan, chan, { message = msg, username = username })
 			end
 		end
@@ -119,7 +119,7 @@ end
 local function recv()
 	while true do
 		local _, _, channel, _, message = os.pullEvent "modem_message"
-		if channel == chan and type(message) == "table" and message.message and message.username then
+		if channel == chan and type(message) == "table" and message.message and message.username and type(message.message) == "string" and type(message.username) == "string" then
 			notification_sound()
 			add_message(message.message, message.username)
 		end
