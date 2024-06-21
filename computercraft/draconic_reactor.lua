@@ -77,7 +77,12 @@ local function display_stats()
 			if reactor_state.status == "warming_up" then
 				status = "Reactor Precharge"
 				status_col = colors.blue
-			elseif reactor_state.status ~= "cold" and (reactor_state.status == "stopping" or reactor_state.temperature > 8000 or reactor_state.fieldStrength / reactor_state.maxFieldStrength < 0.2 or reactor_state.fuelConversion / reactor_state.maxFuelConversion > 0.83) then
+			elseif reactor_state.status == "stopping" or reactor_state.status == "cooling" then
+				status = "Shutdown Running"
+				status_col = colors.lime
+				re_out_gate.setFlowOverride(1e4)
+				re_in_gate.setFlowOverride(0)
+			elseif reactor_state.status ~= "cold" and (reactor_state.temperature > 8000 or reactor_state.fieldStrength / reactor_state.maxFieldStrength < 0.2 or reactor_state.fuelConversion / reactor_state.maxFuelConversion > 0.83) then
 				status = "Emergency Shutdown"
 				status_col = colors.orange
 				reactor.stopReactor()
