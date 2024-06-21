@@ -58,4 +58,4 @@ This comes with absolutely no guarantee of support or correct function, although
 * `nn.sql` - half an RNN in SQLite, unfinished because it *apparently* can't do recursive common table expressions.
 * `alexandergriffing_spite.py` - spites sometime by doing bad numerics in Python.
 * `screensaver.html` - an attempt to replicate one of Apple's screensavers (incomplete).
-* `StringGroup.hs` - native Haskell strings are only a monoid, so I improved them to be a group instead.
+* `StringGroup.hs` - native Haskell strings are only a monoid, so I made an improved version which forms a group instead.

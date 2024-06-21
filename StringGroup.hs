@@ -26,11 +26,6 @@ instance Semigroup SString where
                 | otherwise = go xs (P x:N y:ys)
             go (x:xs) acc = go xs (x:acc)
 
-concat' [] [] = []
-concat' [] ys = ys
-concat' xs [] = xs
-concat' (x:xs) ys = x:concat' xs ys
-
 instance Monoid SString where
     mempty = SString []
 
