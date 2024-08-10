@@ -59,3 +59,5 @@ This comes with absolutely no guarantee of support or correct function, although
 * `alexandergriffing_spite.py` - spites sometime by doing bad numerics in Python.
 * `screensaver.html` - an attempt to replicate one of Apple's screensavers (incomplete).
 * `StringGroup.hs` - native Haskell strings are only a monoid, so I made an improved version which forms a group instead.
+* `arithmetic_coder.py` - arithmetic coding implementation apart from the fact that it doesn't work properly (it doesn't write enough digits for some reason I haven't worked out).
+* `bmp280_prometheus.py` - read BMP280 temperature/pressure sensors and export as Prometheus metrics.
