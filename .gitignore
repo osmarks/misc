@@ -1,3 +1,11 @@
 out.wav
 */target/*
 code-guessing/analytics/people
+*.aux
+*.log
+*.blg
+*latexmk
+*.fls
+*.bbl
+*.out
+*.gz
