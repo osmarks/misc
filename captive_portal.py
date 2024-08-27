@@ -43,6 +43,7 @@ session = requests.Session()
 DETECTPORTAL_URL = "http://detectportal.firefox.com/canonical.html"
 DETECTPORTAL_CONTENT = '<meta http-equiv="refresh" content="0;url=https://support.mozilla.org/kb/captive-portal"/>'
 PRIORITY_KEYWORDS = {"registr", "login", "signup", "signin"}
+CONFIRM_SUFFIXES = {"2", "repeat", "confirm", "_repeat", "_confirm"}
 EMAIL_BASE = "0t.lt"
 
 FIELDTYPES = ("email", "postcode")
@@ -62,6 +63,7 @@ def get_dns():
             return val.strip()
 
 dns_server = get_dns()
+print("DNS server", dns_server)
 adapter = CustomDNSAdapter(dns_server)
 session.mount("http://", adapter)
 session.mount("https://", adapter) 
@@ -95,6 +97,17 @@ def handle_response(response):
         for input in form.find_all("input"):
             name = input.get("name", "")
             if not name: continue
+
+            repeat = None
+            for other_field, value in fields.items():
+                for suffix in CONFIRM_SUFFIXES:
+                    xname = other_field + suffix
+                    if xname == name:
+                        repeat = name, value
+            if repeat:
+                k, v = repeat
+                fields[k] = v
+                continue
             
             fieldtype = None
             for ty in FIELDTYPES:
@@ -105,18 +118,21 @@ def handle_response(response):
                 elif ty in input.get("placeholder", "").lower().replace(" ", ""):
                     fieldtype = ty
 
-            match fieldtype:
-                case "email":
-                    fields[name] = generate_email()
-                case "postcode":
-                    fields[name] = "W1A 1AA" # ISO standard postcode (real)
-                case None:
-                    fields[name] = generate_generic()
-
             if input.get("type") == "checkbox":
                 fields[name] = input.get("value", "on")
-            if input.get("type") == "hidden":
+            elif input.get("type") == "hidden":
                 fields[name] = input.get("value")
+            elif input.get("type") == "radio":
+                if name not in fields:
+                    fields[name] = input.get("value")
+            else:
+                match fieldtype:
+                    case "email":
+                        fields[name] = generate_email()
+                    case "postcode":
+                        fields[name] = "W1A 1AA" # ISO standard postcode (real)
+                    case None:
+                        fields[name] = generate_generic()
 
         for select in form.find_all("select"):
             name = select.get("name", "")
@@ -139,7 +155,7 @@ def handle_response(response):
     queue.extend(x for x in queue_ext if x not in tried)
 
 while True:
-    response = session.get(DETECTPORTAL_URL)
+    response = session.get("https://crosscountrywifi.co.uk/connect")
     if response.text == DETECTPORTAL_CONTENT:
         print("OK")
         raise SystemExit(0)
@@ -150,6 +166,7 @@ while True:
         print("No more URLs to try")
         break
     try:
+        print(next_url)
         response = session.get(next_url)
     except Exception as e:
         print(e)
