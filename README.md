@@ -62,3 +62,7 @@ This comes with absolutely no guarantee of support or correct function, although
 * `arithmetic_coder.py` - arithmetic coding implementation apart from the fact that it doesn't work properly (it doesn't write enough digits for some reason I haven't worked out).
 * `bmp280_prometheus.py` - read BMP280 temperature/pressure sensors and export as Prometheus metrics.
 * `captive_portal.py` - automatically fill in captive portal forms (WIP).
+* `scd4x_prometheus.py` - read SCD4x temperature/humidity/CO2 sensors and export as Prometheus metrics.
+* `weight_painter.py` - paint arbitrary images into neural network weight matrices. Uses a permutation, so the distribution is preserved so training dynamics remain unaffected (so long as the network doesn't care about organization below the weight matrix level - this is not safe for attention heads etc).
+* `cool-effect.glsl` - a nice effect I made by accident whilst trying to make a cooler one.
+* `portable_monitor_wallmount.py` - very simple CADQuery script which generates a frame for my portable monitor's top/bottom bezels so it can be stuck to the wall and slid out easily.

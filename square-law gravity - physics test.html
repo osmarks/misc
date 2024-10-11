@@ -47,7 +47,8 @@
                 const F = vsum(objects.filter(x => x !== object).map(x =>
                     vscale(G * (object.m * x.m) * (vmag(vsub(object.x, x.x)) ** 2), vnorm(vsub(object.x, x.x)))
                 ))
-                object.v = vadd(object.v, vscale(timestep, vscale(1 / object.m, F)))
+                const a = vscale(1 / object.m, F)
+                object.v = vadd(object.v, vscale(timestep, a))
                 //console.log(F, object.x, object.v)
             }
         }

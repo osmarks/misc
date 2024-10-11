@@ -66,7 +66,7 @@ dns_server = get_dns()
 print("DNS server", dns_server)
 adapter = CustomDNSAdapter(dns_server)
 session.mount("http://", adapter)
-session.mount("https://", adapter) 
+session.mount("https://", adapter)
 session.verify = False
 session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"})
 
@@ -90,7 +90,7 @@ def handle_response(response):
                 queue_ext.insert(0, href)
             else:
                 queue_ext.append(href)
-    
+
     for form in soup.find_all("form"):
         fields = {}
 
@@ -108,7 +108,7 @@ def handle_response(response):
                 k, v = repeat
                 fields[k] = v
                 continue
-            
+
             fieldtype = None
             for ty in FIELDTYPES:
                 if ty in name.lower():
@@ -155,7 +155,7 @@ def handle_response(response):
     queue.extend(x for x in queue_ext if x not in tried)
 
 while True:
-    response = session.get("https://crosscountrywifi.co.uk/connect")
+    response = session.get(DETECTPORTAL_URL)
     if response.text == DETECTPORTAL_CONTENT:
         print("OK")
         raise SystemExit(0)
