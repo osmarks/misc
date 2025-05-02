@@ -13,7 +13,7 @@ TARGET_ID = 0x58
 CTRL_MEAS_REGISTER = 0xF4
 PRESSURE_REGISTER_BASE = 0xF7
 TEMP_REGISTER_BASE = 0xFA
-CALIBRAITON_VALUES = {
+CALIBRATION_VALUES = {
     "dig_T1": {"address": (0x88, 0x89), "unpack": "<H"},
     "dig_T2": {"address": (0x8A, 0x8B), "unpack": "<h"},
     "dig_T3": {"address": (0x8C, 0x8D), "unpack": "<h"},
@@ -32,7 +32,7 @@ def setup():
     assert bus.read_byte_data(ADDR, ID_REGISTER) == TARGET_ID
     bus.write_byte_data(ADDR, CTRL_MEAS_REGISTER, 0b101_101_11) # max oversampling mode (we don"t really care about power), power on
     calibration = {}
-    for key, value in CALIBRAITON_VALUES.items():
+    for key, value in CALIBRATION_VALUES.items():
         calibration[key] = struct.unpack(value["unpack"], bytes([bus.read_byte_data(ADDR, value["address"][0]), bus.read_byte_data(ADDR, value["address"][1])]))[0]
     return calibration
 

@@ -9,3 +9,7 @@ code-guessing/analytics/people
 *.bbl
 *.out
 *.gz
+*/counts.csv
+*/counts-old.csv
+*/*.png
+*.zst
