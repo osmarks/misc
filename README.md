@@ -66,3 +66,8 @@ This comes with absolutely no guarantee of support or correct function, although
 * `weight_painter.py` - paint arbitrary images into neural network weight matrices. Uses a permutation, so the distribution is preserved so training dynamics should not be affected much.
 * `cool-effect.glsl` - a nice effect I made by accident whilst trying to make a cooler one.
 * `portable_monitor_wallmount.py` - very simple CADQuery script which generates a frame for my portable monitor's top/bottom bezels so it can be stuck to the wall and slid out easily.
+* `parametric_mesh.py` - generate grid patterns using OpenSCAD.
+* `bigram.py` - "Cantor Dust"-like visualizer of byte bigrams.
+* `extract_nouns.py` - Harvest nouns from osmarks.net FTS dumps.
+* `compare_things.py` - Generate comparisons from noun harvest for hypothetically training a preference model over things.
+* `autocrafter.py` - Minecraft autocrafting research.
