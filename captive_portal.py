@@ -42,7 +42,7 @@ session = requests.Session()
 
 DETECTPORTAL_URL = "http://detectportal.firefox.com/canonical.html"
 DETECTPORTAL_CONTENT = '<meta http-equiv="refresh" content="0;url=https://support.mozilla.org/kb/captive-portal"/>'
-PRIORITY_KEYWORDS = {"registr", "login", "signup", "signin"}
+PRIORITY_KEYWORDS = {"regist", "login", "signup", "signin"}
 CONFIRM_SUFFIXES = {"2", "repeat", "confirm", "_repeat", "_confirm"}
 EMAIL_BASE = "0t.lt"
 
@@ -85,11 +85,20 @@ def handle_response(response):
     queue_ext = []
     for link in soup.find_all("a"):
         if href := link.get("href"):
-            href = urllib.parse.urljoin(response.url, href)
             if is_priority(href):
                 queue_ext.insert(0, href)
             else:
                 queue_ext.append(href)
+    """
+    for script in soup.find_all("script"):
+        if src := script.get("src"):
+            queue_ext.append(src)
+    """
+    for meta in soup.find_all("meta"):
+        if meta.get("http-equiv", "").lower() == "refresh":
+            if content := meta.get("content"):
+                if mat := re.match(r"\d+;URL='(.*)'", content):
+                    queue_ext.append(mat.group(1))
 
     for form in soup.find_all("form"):
         fields = {}
@@ -152,6 +161,7 @@ def handle_response(response):
             response = session.post(action, data=fields)
         handle_response(response)
 
+    queue_ext = [ urllib.parse.urljoin(response.url, q) for q in queue_ext ]
     queue.extend(x for x in queue_ext if x not in tried)
 
 while True:

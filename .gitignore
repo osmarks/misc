@@ -13,3 +13,13 @@ code-guessing/analytics/people
 */counts-old.csv
 */*.png
 *.zst
+tacnet.sqlite3
+basic
+basic.png
+complex
+complex.png
+minecraft_images
+comparisons.jsonl
+nouns_cache.db
+nouns.json
+*.scad

@@ -1,40 +1,140 @@
 <!DOCTYPE html>
-<canvas id="canv"></canvas>
-<input type="file" id="file">
-<button id="step">Step</button>
+<style>
+    canvas {
+        border: 1px solid black;
+    }
+
+    #colors .color {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        margin: 5px;
+        border: 1px solid black;
+    }
+</style>
+<canvas id="output"></canvas>
+<canvas id="pattern"></canvas>
+<div id="controls">
+    <button id="step">Step</button>
+    <button id="run">Run</button>
+    <button id="reset">Reset</button>
+    <input type="checkbox" id="hard-borders" checked><label for="hard-borders">Hard borders</label>
+    <input type="checkbox" id="ignore-directions" checked><label for="ignore-directions">Ignore directions</label>
+    <input type="checkbox" id="diagonals" checked><label for="diagonals">Diagonals</label>
+</div>
+<div id="colors"></div>
 <div id="out"></div>
 <script>
     const write = line => {
         const out = document.querySelector("#out")
+        out.innerHTML = ""
         out.appendChild(document.createTextNode(line))
         out.appendChild(document.createElement("br"))
     }
 
-    const PX = 16
+    const PATTERN_W = 6
     const W = 16
-    const RANGE = 10
-    const ctx = document.querySelector("canvas").getContext("2d")
-    ctx.canvas.width = PX * W
-    ctx.canvas.height = PX * W
+    const PX = 24
+    const PATTERN_PX = 64
 
-    let grid = Array(W * W).fill(null).map(x => ({ value: null, options: new Set(Array(RANGE).fill(null).map((_, ix) => ix)) }))
     const map = ([x, y]) => x + y * W
     const unmap = a => [a % W, Math.floor(a / W)]
     const vsum = ([a, b], [c, d]) => [a + c, b + d]
-    const adj = [[0, 1], [0, -1], [1, 0], [-1, 0]]
-    const inRange = p => p >= 0 && p < grid.length
+    const inRange = ([x, y]) => x >= 0 && x < W && y >= 0 && y < W
     const modclamp = x => x < 0 ? 10 + x : x % 10
+
+    let currentConstraintSet = {}
+    let colorsInUse = new Set()
+
+    let ignoreDirections = false
+    const readIgnoreDirections = () => ignoreDirections = document.querySelector("#ignore-directions").checked
+    readIgnoreDirections()
+    document.querySelector("#ignore-directions").addEventListener("change", readIgnoreDirections)
+    let hardBorders = false
+    const readHardBorders = () => hardBorders = document.querySelector("#hard-borders").checked
+    readHardBorders()
+    document.querySelector("#hard-borders").addEventListener("change", readHardBorders)
+
+    const getAdjacent = diagonals => diagonals ? [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]] : [[0, 1], [0, -1], [1, 0], [-1, 0]]
+
+    let adj = null
+
+    const ctx = document.querySelector("canvas#output").getContext("2d")
+    ctx.canvas.width = PX * W
+    ctx.canvas.height = PX * W
+
+    let grid = Array(W * W).fill(null).map(x => ({ value: null, options: new Set() }))
+
+    const joinConstraintKey = adjs => {
+        if (ignoreDirections) adjs.sort()
+        return adjs.join(",")
+    }
+
+    const regenerateOptionsAt = (coord) => {
+        const data = grid[map(coord)]
+        const slots = []
+        for (const a of adj) {
+            const n = vsum(a, coord)
+            if (inRange(n)) {
+                const value = grid[map(n)].value
+                slots.push(value === null ? undefined : value)
+            } else {
+                slots.push(null)
+            }
+        }
+        if (slots.every(x => x === undefined)) {
+            data.options = colorsInUse // no constraints apply - shortcut
+            return
+        }
+        const out = new Set()
+        let hasMatch = false
+        // N-way Cartesian product of slots
+        const go = (slots, acc) => {
+            if (slots.length === 0) {
+                for (const prod of acc) {
+                    const ckey = joinConstraintKey(prod)
+                    if (currentConstraintSet[ckey]) {
+                        for (const val of currentConstraintSet[ckey]) {
+                            out.add(val)
+                        }
+                        hasMatch = true
+                    }
+                }
+            } else {
+                const [fst, ...rest] = slots
+                if (fst === undefined) {
+                    return go(rest, Array.from(colorsInUse).concat(hardBorders ? [] : [null]).flatMap(x => acc.map(xs => [x].concat(xs))))
+                } else {
+                    return go(rest, acc.map(xs => [fst].concat(xs)))
+                }
+            }
+        }
+        go(slots, [[]])
+        data.options = out
+    }
+
+    const regenerateOptions = () => {
+        for (let x = 0; x < W; x++) {
+            for (let y = 0; y < W; y++) {
+                regenerateOptionsAt([x, y])
+            }
+        }
+    }
+
+    const readAdjacent = () => {
+        adj = getAdjacent(document.querySelector("#diagonals").checked)
+        regenerateOptions()
+    }
+    readAdjacent()
+    document.querySelector("#diagonals").addEventListener("change", readAdjacent)
 
     const updatePos = (pos, value) => {
         grid[map(pos)].value = value
-        console.log(value)
         grid[map(pos)].options = null
         for (const a of adj) {
-            const n = map(vsum(a, pos))
-            if (inRange(n) && grid[n].value === null) {
-                for (const offset of [-1, 0, 1, 2, -2, 3, -3]) {
-                    grid[n].options.delete(modclamp(offset + value))
-                }
+            const n = vsum(a, pos)
+            if (inRange(n) && grid[map(n)].value === null && grid[map(n)].options !== null) {
+                regenerateOptionsAt(n)
             }
         }
     }
@@ -49,17 +149,70 @@
             bestPos.push(unmap(index))
         }
         return [bestQty, bestPos]
-    }, [RANGE, []])
+    }, [colorsInUse.size + 1, []])
+
     const render = grid => {
         for (let x = 0; x < W; x++) {
             for (let y = 0; y < W; y++) {
                 const data = grid[map([x, y])]
-                const level = data.options && Math.floor(data.options.size / RANGE * 255).toString(16).padStart(2, "0")
-                ctx.fillStyle = data.value !== null ? `#0000${Math.floor(data.value / RANGE * 255).toString(16).padStart(2, "0")}` : `#${level}${level}${level}`
+                const level = data.options && Math.floor((data.options.size + 1) / (colorsInUse.size + 1) * 255).toString(16).padStart(2, "0") || "00"
+                ctx.fillStyle = data.value !== null ? data.value : `#${level}${level}${level}`
                 ctx.fillRect(x * PX, y * PX, PX, PX)
+                if (data.value === null) {
+                    ctx.strokeStyle = "#000000"
+                    ctx.beginPath()
+                    ctx.moveTo(x * PX, y * PX)
+                    ctx.lineTo((x + 1) * PX, (y + 1) * PX)
+                    ctx.closePath()
+                    ctx.stroke()
+                    ctx.strokeStyle = null
+                }
             }
         }
     }
+
+    let recentColors = ["#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff"]
+    const recentColorsDiv = document.querySelector("#colors")
+    let currentColor = recentColors[0]
+
+    const pushColor = color => {
+        recentColors = [color].concat(recentColors.filter(x => x !== color))
+        if (recentColors.length > 10) {
+            recentColors.shift()
+        }
+        currentColor = color
+        updateRecentColors()
+    }
+
+    const updateRecentColors = () => {
+        recentColorsDiv.innerHTML = ""
+        for (const color of recentColors) {
+            recentColorsDiv.appendChild(document.createElement("div"))
+            recentColorsDiv.lastChild.classList.add("color")
+            recentColorsDiv.lastChild.style.backgroundColor = color
+            recentColorsDiv.lastChild.addEventListener("click", () => {
+                pushColor(color)
+            })
+        }
+    }
+
+    const handleCanvasMouse = ev => {
+        if ((ev.buttons & 1) !== 0) {
+            return
+        }
+        const [x, y] = [Math.floor(ev.offsetX / PX), Math.floor(ev.offsetY / PX)]
+        if (x < 0 || x >= W || y < 0 || y >= W) {
+            return
+        }
+        const coord = [x, y]
+        const data = grid[map(coord)]
+        if (data.value === null) {
+            pushColor(currentColor)
+            updatePos(coord, currentColor)
+        }
+    }
+    ctx.canvas.addEventListener("click", handleCanvasMouse)
+    ctx.canvas.addEventListener("mousemove", handleCanvasMouse)
 
     const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
@@ -67,38 +220,110 @@
 
     step.onclick = () => {
         const [qty, pos] = findBestCandidates(grid)
-        if (qty === 0) {
-            write("contradiction")
+        if (pos.length === 0) {
+            write("Done.")
             return
         }
-        write(`${qty} options on ${pos.length} tiles`)
+        if (qty === 0) {
+            write("Contradiction.")
+            return
+        }
+        write(`${qty} options on ${pos.length} tiles.`)
         if (qty === 1) {
-            write("resolving")
+            write(`Resolving ${pos.length} tiles.`)
             for (const p of pos) {
                 const newValue = Array.from(grid[map(p)].options)[0]
-                console.log(newValue)
                 updatePos(p, newValue)
             }
         } else {
             const p = pick(pos)
-            console.log(p, map(p), grid[map(p)])
             const newValue = pick(Array.from(grid[map(p)].options))
-            console.log(newValue)
             updatePos(p, newValue)
         }
         render(grid)
     }
 
-    window.file.oninput = ev => {
-        const file = e.target.files[0]
-        const url = URL.createObjectURL(file)
-        const img = new Image()
-        
-        img.onload = function() {
-            URL.revokeObjectURL(img.src)
-            c.getContext("2d").drawImage(img, 0, 0)
+    let timer
+    const runButton = document.querySelector("#run")
+    runButton.addEventListener("click", () => {
+        if (runButton.innerHTML === "Run") {
+            runButton.innerHTML = "Stop"
+            timer = setInterval(step.onclick, 100)
+        } else {
+            runButton.innerHTML = "Run"
+            clearInterval(timer)
+        }
+    })
+
+    const reset = () => {
+        grid = Array(W * W).fill(null).map(x => ({ value: null, options: new Set() }))
+        clearInterval(timer)
+        runButton.innerHTML = "Run"
+        render(grid)
+        regenerateOptions()
+    }
+    document.querySelector("#reset").addEventListener("click", reset)
+
+    const patternEditor = () => {
+        const map = ([x, y]) => x + y * PATTERN_W
+        const pattern = document.querySelector("canvas#pattern")
+        const ctx = pattern.getContext("2d")
+
+        let grid = Array(PATTERN_W * PATTERN_W).fill(null).map(x => ({ value: currentColor }))
+        const inRange = ([x, y]) => x >= 0 && x < PATTERN_W && y >= 0 && y < PATTERN_W
+
+        pattern.width = PATTERN_PX * PATTERN_W
+        pattern.height = PATTERN_PX * PATTERN_W
+
+        const constraintKeyFor = coord => {
+            let constraintKey = []
+            for (const a of adj) {
+                const n = vsum(a, coord)
+                if (inRange(n)) {
+                    constraintKey.push(grid[map(n)].value)
+                } else {
+                    constraintKey.push(null)
+                }
+            }
+            return joinConstraintKey(constraintKey)
         }
 
-        img.src = url 
+        const recomputeConstraintSet = () => {
+            currentConstraintSet = new Set()
+            colorsInUse = new Set()
+            for (let x = 0; x < PATTERN_W; x++) {
+                for (let y = 0; y < PATTERN_W; y++) {
+                    const coord = [x, y]
+                    const data = grid[map(coord)]
+                    const constraintKey = constraintKeyFor(coord)
+                    currentConstraintSet[constraintKey] ??= new Set()
+                    currentConstraintSet[constraintKey].add(data.value)
+                    colorsInUse.add(data.value)
+                }
+            }
+
+            regenerateOptions()
+        }
+
+        const handlePatternMouse = ev => {
+            if ((ev.buttons & 1) !== 0) {
+                return
+            }
+            const [x, y] = [Math.floor(ev.offsetX / PATTERN_PX), Math.floor(ev.offsetY / PATTERN_PX)]
+            if (x < 0 || x >= PATTERN_W || y < 0 || y >= PATTERN_W) {
+                return
+            }
+            ctx.fillStyle = currentColor
+            ctx.fillRect(PATTERN_PX * x, PATTERN_PX * y, PATTERN_PX, PATTERN_PX)
+            grid[map([x, y])].value = currentColor
+            recomputeConstraintSet()
+        }
+        pattern.addEventListener("click", handlePatternMouse)
+        pattern.addEventListener("mousemove", handlePatternMouse)
+
+        recomputeConstraintSet()
     }
+
+    updateRecentColors()
+    patternEditor()
 </script>

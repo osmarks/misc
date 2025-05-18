@@ -1,9 +1,9 @@
 import os, sys, subprocess, datetime
 
-dt_threshold = datetime.datetime(2023, 6, 16).timestamp()
+dt_threshold = datetime.datetime(2024, 10, 22).timestamp()
 
 _, indir, outdir = sys.argv
-for x in os.listdir(indir):
+for x in sorted(os.listdir(indir)):
     inpath = os.path.join(indir, x)
     if os.stat(inpath).st_mtime > dt_threshold:
         if subprocess.run(("feh", inpath)).returncode == 0:

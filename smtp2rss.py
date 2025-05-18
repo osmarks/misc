@@ -99,7 +99,10 @@ def clean_html(html):
         remove_unknown_tags=True,
         safe_attrs_only=True
     )
-    return cleaner.clean_html(feedparser.sanitizer._sanitize_html(html.replace("<!doctype html>", ""), "utf-8", "text/html"))
+    try:
+        return cleaner.clean_html(feedparser.sanitizer._sanitize_html(html.replace("<!doctype html>", ""), "utf-8", "text/html"))
+    except:
+        return "HTML parse error"
 
 def email_to_html(emsg, debug_info=False):
     if isinstance(emsg, Message):
