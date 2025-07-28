@@ -1,6 +1,6 @@
-import sqlite3
+import sqlite3, sys
 
-longterm = sqlite3.connect("/data/archive/lthist.sqlite3")
+longterm = sqlite3.connect(sys.argv[1])
 longterm.executescript(f"""
 CREATE TABLE IF NOT EXISTS places (
     guid TEXT PRIMARY KEY,
