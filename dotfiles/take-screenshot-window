@@ -1,0 +1,3 @@
+#!/bin/sh
+#grim -g "$(labwc_get_window)" ~/Pictures/$(date "+screenshot-%Y%m%d-%Hh%Mm%Ss").png
+grim -g "$(swaymsg -t get_tree | jq -j '.. | select(.type?) | select(.focused).rect | "\(.x),\(.y) \(.width)x\(.height)"')" ~/Pictures/$(date "+screenshot-%Y%m%d-%Hh%Mm%Ss").png

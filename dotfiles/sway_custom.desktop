@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Sway custom
+Comment=An i3-compatible Wayland compositor
+Exec=/home/osmarks/.local/bin/run_sway_env
+Type=Application

@@ -1,0 +1,4 @@
+#!/bin/sh
+swaylock -f -i ~/out2.png
+#swaylock-plugin -f --command-each "xscreensaver-polytopes"
+fractalart -W 3840 -H 2160 -o out2.png -v 3072 &

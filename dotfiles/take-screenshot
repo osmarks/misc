@@ -1,0 +1,2 @@
+#!/bin/sh
+grim -g "$(slurp)" ~/Pictures/$(date "+screenshot-%Y%m%d-%Hh%Mm%Ss").png

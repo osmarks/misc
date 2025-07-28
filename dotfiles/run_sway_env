@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# This allows xdg-desktop-portal-wlr to function (e.g. for screen-recording)
+export XDG_CURRENT_DESKTOP=wlroots
+
+#export XKB_DEFAULT_LAYOUT=custom
+export XKB_DEFAULT_OPTIONS=compose:caps,mod_led:compose
+
+export ELECTRON_OZONE_PLATFORM_HINT=wayland
+
+export MOZ_ENABLE_WAYLAND=1
+
+# Set cursor theme.
+# Find icons themes with the command below or similar:
+#     find /usr/share/icons/ -type d -name "cursors"
+export XCURSOR_THEME=breeze_cursors
+
+# For Java applications such as JetBrains/Intellij Idea, set this variable
+# to avoid menus with incorrect offset and blank windows
+# See https://github.com/swaywm/sway/issues/595
+export _JAVA_AWT_WM_NONREPARENTING=1
+
+export GTK_THEME=Arc-Darker
+export XCURSOR_THEME=Adwaita
+
+export SDL_VIDEODRIVER=wayland
+
+sway 2>&1 | tee ~/.local/sway.log
