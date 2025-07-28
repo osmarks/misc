@@ -261,4 +261,7 @@ mode "resize" {
 #    }
 #}
 
+set $gnome-schema org.gnome.desktop.interface
+exec_always gsettings set $gnome-schema gtk-icon-theme-name 'Papirus-Light'
+
 include /etc/sway/config.d/*
