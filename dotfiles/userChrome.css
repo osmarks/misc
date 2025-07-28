@@ -1,0 +1,15 @@
+.tabbrowser-tab:not([selected="true"]) > .tab-stack > .tab-background {
+  border: 1px solid rgba(130, 130, 130, 0.5) !important;
+}
+
+.tabbrowser-tab {
+	padding: 0 !important;
+}
+
+.tab-background {
+	border-radius: 0 !important;
+}
+
+.tab-label-container[textoverflow][labeldirection="ltr"]:not([pinned]), .tab-label-container[textoverflow]:not([labeldirection], [pinned]):-moz-locale-dir(ltr) {
+	mask-image: none !important;
+}
