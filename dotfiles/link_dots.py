@@ -14,8 +14,8 @@ files = {
     "zed.json": "~/.config/zed/settings.json",
     "xkb_custom": "~/.config/xkb/symbols/custom",
     "sway_custom.desktop": "/usr/share/wayland-sessions/sway_custom.desktop",
-    "take_screenshot": "~/.local/bin/take-screenshot",
-    "take_screenshot_window": "~/.local/bin/take-screenshot-window",
+    "take-screenshot": "~/.local/bin/take-screenshot",
+    "take-screenshot-window": "~/.local/bin/take-screenshot-window",
     "waybar_config": "~/.config/waybar/config",
     "waybar_style.css": "~/.config/waybar/style.css",
     "wezterm.lua": "~/.wezterm.lua"
@@ -52,4 +52,5 @@ for src, trg in files.items():
     os.makedirs(real_trg.parent, exist_ok=True)
     if not real_trg.exists():
         subprocess.run(["sudo", "ln", "-s", real_src.absolute(), real_trg])
+        subprocess.run(["sudo", "chown", "osmarks:osmarks", real_trg])
         print(real_trg)
