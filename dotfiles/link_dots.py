@@ -35,7 +35,7 @@ packages = [
     "ttf-fira-code",
     "network-manager-applet",
     "kanshi",
-    "bemenu",
+    "bemenu-wayland",
     "pavucontrol",
     "swaylock",
     "jq"
@@ -51,5 +51,5 @@ for src, trg in files.items():
     real_trg = Path(trg).expanduser()
     os.makedirs(real_trg.parent, exist_ok=True)
     if not real_trg.exists():
-        subprocess.run(["sudo", "ln", "-s", real_src, real_trg])
+        subprocess.run(["sudo", "ln", "-s", real_src.absolute(), real_trg])
         print(real_trg)
