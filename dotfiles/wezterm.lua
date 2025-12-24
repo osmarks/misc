@@ -4,8 +4,8 @@ local config = {}
 
 config.ssh_domains = {
   {
-    name = 'protagonism',
-    remote_address = 'protagonism'
+    name = 'straylight',
+    remote_address = 'straylight'
   },
 }
 config.unix_domains = {
@@ -16,5 +16,11 @@ config.unix_domains = {
 
 config.font = wezterm.font "Fira Code"
 config.font_size = 10
+config.font_rules = {
+    {
+        intensity = "Half",
+        font = wezterm.font("Fira Code", { weight = "Regular" })
+    }
+}
 
 return config

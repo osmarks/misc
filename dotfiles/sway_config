@@ -1,70 +1,30 @@
-# Default config for sway
-#
-# Copy this to ~/.config/sway/config and edit it to your liking.
-#
-# Read `man 5 sway` for a complete reference.
-
 default_border normal 2
 default_floating_border normal 2
 font "pango:Iosevka,monospace 10"
 
-### Variables
-#
-# Logo key. Use Mod1 for Alt.
 set $mod Mod4
-# Home row direction keys, like vim
 set $left h
 set $down j
 set $up k
 set $right l
-# Your preferred terminal emulator
 set $term wezterm
-# Your preferred application launcher
-# Note: pass the final command to swaymsg so that the resulting window can be opened
-# on the original workspace that the command was run on.
 set $menu bemenu-run --no-exec | xargs swaymsg exec --
 
 output * adaptive_sync on
 
-### Output configuration
-#
-# Default wallpaper (more resolutions are available in /usr/share/backgrounds/sway/)
 output * bg #000000 solid_color
-#
-# Example configuration:
-#
-#   output HDMI-A-1 resolution 1920x1080 position 1920,0
-#
-# You can get the names of your outputs by running: swaymsg -t get_outputs
 
-### Idle configuration
-#
-# Example configuration:
-#
-# exec swayidle -w \
-#          timeout 300 'swaylock -f -c 000000' \
-#          timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-#          before-sleep 'swaylock -f -c 000000'
-#
-# This will lock your screen after 300 seconds of inactivity, then turn off
-# your displays after another 300 seconds, and turn your screens back on when
-# resumed. It will also lock your screen before your computer goes to sleep.
-
-exec swayidle -w \
-        timeout 300 'lock' \
-        timeout 600 'wlopm --off \*' \
-        resume 'wlopm --on \*' \
-        before-sleep 'lock'
+exec swayidle -w timeout 300 'lock' timeout 600 'wlopm --off \*' resume 'wlopm --on \*' before-sleep 'lock'
 exec dunst
 exec arbtt_wayland_toplevel.py
-#exec sway_workspace_ctl.py
+exec sway_workspace_ctl.py
 exec fix_gnome.sh
-#exec kanshi
+exec kanshi
 exec waybar
-#exec nm-applet
+exec nm-applet
 exec local_sway_init.sh
 #exec wl-paste -t text --watch clipman store
-#exec_always kanshictl reload
+exec_always kanshictl reload
 
 input "type:keyboard" {
     xkb_layout custom

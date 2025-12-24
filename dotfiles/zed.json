@@ -7,12 +7,11 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
-    "assistant": {
+    "agent": {
         "default_model": {
             "provider": "zed.dev",
             "model": "claude-3-5-sonnet-latest"
         },
-        "version": "2"
     },
     "ui_font_size": 12,
     "buffer_font_weight": 300,
@@ -33,5 +32,13 @@
     "inlay_hints": {
         "enabled": true
     },
-    "soft_wrap": "editor_width"
+    "soft_wrap": "editor_width",
+    "languages": {
+        "Python": {
+          "language_servers": [
+            "!basedpyright",
+            "pyright"
+          ]
+        }
+      }
 }
