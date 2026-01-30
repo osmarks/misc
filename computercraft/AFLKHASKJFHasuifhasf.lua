@@ -138,8 +138,8 @@ while true do
 			local p1, p2 = trilaterate(fixes[1], fixes[2], fixes[3])
 			if p1 and p2 then
 				local pos = narrow(p1, p2, fixes[4])
-				if channel == gps.CHANNEL_GPS and message == "PING" then
-					write_to("gps", timestamp(), ("%d: %.0f %.0f %.0f"):format(reply_channel, pos.x, pos.y, pos.z))
+				if channel == gps.CHANNEL_GPS then
+					if message == "PING" then write_to("gps", timestamp(), ("%d: %.0f %.0f %.0f"):format(reply_channel, pos.x, pos.y, pos.z)) end
 				elseif channel == 999 then
 					local status, label = "?", "?"
 					if type(message) == "table" then status = tostring(message.status) label = tostring(message.label) end
@@ -153,4 +153,5 @@ while true do
 	end
 
 end
+
 
