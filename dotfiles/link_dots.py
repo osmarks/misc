@@ -38,7 +38,14 @@ packages = [
     "bemenu-wayland",
     "pavucontrol",
     "swaylock",
-    "jq"
+    "jq",
+    "fish",
+    "zoxide",
+    "atuin",
+    "arc-icon-theme",
+    "breeze-icons",
+    "arc-gtk-theme",
+    "magic-wormhole"
 ]
 
 subprocess.run(["sudo", "pacman", "-S", *packages])

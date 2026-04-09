@@ -11,6 +11,7 @@ set $term wezterm
 set $menu bemenu-run --no-exec | xargs swaymsg exec --
 
 output * adaptive_sync on
+output "DP-3" render_bit_depth 10
 
 output * bg #000000 solid_color
 
