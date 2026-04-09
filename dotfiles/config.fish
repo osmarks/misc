@@ -8,6 +8,12 @@ if status is-login
     #keychain --eval $SSH_KEYS_TO_AUTOLOAD 2> /dev/null | source
 end
 
+functions -q real_cd; or functions -c cd real_cd
+function cd
+    set -g PREV_PWD
+    real_cd $argv
+end
+
 function __project_jail_chpwd --on-variable PWD
     if set -q NORECURSE
         set -e NORECURSE
@@ -18,9 +24,9 @@ function __project_jail_chpwd --on-variable PWD
     end
 
     if test -x ~/.local/bin/project-jail
+        set -l back "$PREV_PWD"
+        test -n "$back"; or set back "$HOME"
         if ~/.local/bin/project-jail
-            set -l back "$dirprev[1]"
-            test -n "$back"; or set back "$HOME"
             set -g NORECURSE
             cd "$back"
         end

@@ -4,15 +4,11 @@
 # Supply chain attack mitigation.
 # Written by GPT-5.4 and adapted slightly by hand.
 
-from __future__ import annotations
-
 import json
 import os
 import shutil
-import subprocess
 import sys
 from pathlib import Path
-
 
 CONFIG_PATH = Path.home() / ".config" / "jails.json"
 MARKER_ENV = "IN_PROJECT_JAIL"
@@ -21,7 +17,8 @@ PROFILES = {
     "rust": [
         ("rw", "~/.cargo/bin"),
         ("rw", "~/.cargo/git"),
-        ("ro", "~/.gitconfig")
+        ("ro", "~/.gitconfig"),
+        ("ro", "~/.rustup")
     ],
     "node": [
         ("rw", "~/.npm"),
@@ -72,7 +69,7 @@ def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
 
     state_dir = Path(os.environ.get("XDG_STATE_HOME", home / ".local" / "state")) / "project-jails"
     sandbox_name = entry.get("name") or project_root.name
-    sandbox_home = state_dir / sandbox_name / "home"
+    sandbox_home = state_dir / sandbox_name / os.path.expanduser("~")
     sandbox_tmp = state_dir / sandbox_name / "tmp"
 
     ensure_dir(sandbox_home)
@@ -154,6 +151,7 @@ def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
         shell,
         "-i",
     ]
+    print(cmd)
     print(f"-> sandbox profile {entry['profile']} for {entry['name']}")
     return cmd
 
