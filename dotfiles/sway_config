@@ -225,4 +225,8 @@ mode "resize" {
 set $gnome-schema org.gnome.desktop.interface
 exec_always gsettings set $gnome-schema gtk-icon-theme-name 'Papirus-Light'
 
+client.focused #5050aa #5050aa #ffffff
+client.focused_inactive #444460 #444460 #ffffff
+client.unfocused #101010 #101010 #909090
+
 include /etc/sway/config.d/*

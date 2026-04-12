@@ -2,7 +2,7 @@
     border: none;
     border-radius: 0;
     /* `otf-font-awesome` is required to be installed for icons */
-    font-family: 'Iosevka', 'Font Awesome 6 Free';
+    font-family: 'Font Awesome 6 Free', 'Iosevka', 'Font Awesome 6 Free';
     /*font-family: 'Iosevka';*/
     font-size: 16px;
     min-height: 0;
@@ -84,6 +84,9 @@ window#waybar.chromium {
     margin: 0 4px;
     color: #ffffff;
 }
+#idle_inhibitor {
+    padding: 0 12px 0 12px;
+}
 
 #window,
 #workspaces {
@@ -101,7 +104,8 @@ window#waybar.chromium {
 }
 
 #clock {
-    background-color: #64727D;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 #battery {
@@ -136,12 +140,13 @@ label:focus {
 }
 
 #cpu {
-    background-color: #2ecc71;
+    background-color: #ffffff;
     color: #000000;
 }
 
 #memory {
-    background-color: #9b59b6;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 #disk {
@@ -153,7 +158,8 @@ label:focus {
 }
 
 #network {
-    background-color: #2980b9;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 #network.disconnected {
@@ -161,7 +167,7 @@ label:focus {
 }
 
 #pulseaudio {
-    background-color: #f1c40f;
+    background-color: #ffffff;
     color: #000000;
 }
 
@@ -193,7 +199,7 @@ label:focus {
 }
 
 #tray {
-    background-color: #2980b9;
+    background-color: #ffffff;
 }
 
 #tray > .passive {
@@ -210,7 +216,7 @@ label:focus {
 }
 
 #idle_inhibitor.activated {
-    background-color: #ecf0f1;
+    background-color: #ffffff;
     color: #2d3436;
 }
 

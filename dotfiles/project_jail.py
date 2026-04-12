@@ -6,17 +6,22 @@
 
 import json
 import os
+import subprocess
 import shutil
 import sys
 from pathlib import Path
+import os
 
 CONFIG_PATH = Path.home() / ".config" / "jails.json"
 MARKER_ENV = "IN_PROJECT_JAIL"
+ANTIJACK_SYSCALL_FILTER = Path.home() / ".config" / "jail-antijack"
 
+# this is not great because it shares the caches, but oh well
 PROFILES = {
     "rust": [
         ("rw", "~/.cargo/bin"),
         ("rw", "~/.cargo/git"),
+        ("rw", "~/.cargo/registry"),
         ("ro", "~/.gitconfig"),
         ("ro", "~/.rustup")
     ],
@@ -25,7 +30,10 @@ PROFILES = {
         ("rw", "~/.cache/node-gyp"),
         ("ro", "~/.gitconfig")
     ],
-    "python": []
+    "python": [],
+    "gpu": [ # TODO: this is very broad
+        ("rw", "/sys")
+    ]
 }
 
 def load_config() -> dict[str, dict]:
@@ -57,7 +65,7 @@ def find_matching_entry(cwd: Path, config: dict[str, dict]) -> dict | None:
 def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
-def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
+def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
     bwrap = shutil.which("bwrap")
     if not bwrap:
         print("project-jail: bwrap not found in PATH", file=sys.stderr)
@@ -104,19 +112,20 @@ def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
         "--setenv", MARKER_ENV, "1",
         "--setenv", "PROJECT_ROOT", str(project_root),
         "--chdir", str(cwd),
+        "--seccomp", str(fd)
     ]
 
     rw_binds = []
 
-    profile = PROFILES[entry["profile"]]
-    for type, path in profile:
-        path = str(resolve_path(path))
-        if type == "rw":
-            rw_binds.append(path)
-        elif type == "ro":
-            ro_binds.append(path)
-        else:
-            assert False
+    for profile in entry["profile"]:
+        for type, path in PROFILES[profile]:
+            path = str(resolve_path(path))
+            if type == "rw":
+                rw_binds.append(path)
+            elif type == "ro":
+                ro_binds.append(path)
+            else:
+                assert False
 
     for path in ro_binds:
         if Path(path).exists():
@@ -130,6 +139,7 @@ def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
         if Path(path).exists():
             cmd += ["--dev-bind", path, path]
 
+    # TODO: maybe don't pass all this through
     runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
     if runtime_dir and Path(runtime_dir).exists():
         cmd += ["--bind", runtime_dir, runtime_dir]
@@ -151,11 +161,14 @@ def build_bwrap_command(entry: dict, cwd: Path) -> list[str]:
         shell,
         "-i",
     ]
-    print(cmd)
+    #print(cmd)
     print(f"-> sandbox profile {entry['profile']} for {entry['name']}")
     return cmd
 
 def main() -> int:
+    if not ANTIJACK_SYSCALL_FILTER.exists():
+        subprocess.run(["antijack", "-o", ANTIJACK_SYSCALL_FILTER]).check_returncode()
+
     if os.environ.get(MARKER_ENV) == "1":
         return 0
 
@@ -165,7 +178,12 @@ def main() -> int:
     if not entry:
         return 2
 
-    cmd = build_bwrap_command(entry, cwd)
+    # TODO: seccomp filter is not invulnerable and this would ideally be pty-based
+    f = open(ANTIJACK_SYSCALL_FILTER, "rb")
+    fd = f.fileno()
+    os.set_inheritable(fd, True)
+
+    cmd = build_bwrap_command(entry, cwd, fd)
     os.execvp(cmd[0], cmd)
     return 1
 
