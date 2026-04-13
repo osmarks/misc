@@ -161,7 +161,7 @@ def process():
                         "slug": "sainsburys/" + slug,
                         "nutrition": values,
                         "cost": cost,
-                        "name": name
+                        "name": obj["name"]
                     }, h)
                     h.write("\n")
 
