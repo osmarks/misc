@@ -16,7 +16,16 @@ xkb_symbols "basic" {
     key <AE04>	{ [         4,     dollar,     EuroSign,   onequarter ]	};
 
     key <AC11>	{ [apostrophe,         at, dead_circumflex, dead_caron]	};
-    key <BKSL>	{ [numbersign, asciitilde,   backslash, bar ]	};
+    //key <BKSL>	{ [numbersign, asciitilde,   backslash, bar ]	};
+key <BKSL> {
+    type[Group1] = "FOUR_LEVEL_EITHER_ALT",
+    symbols[Group1] = [
+        numbersign,
+        asciitilde,
+        backslash,
+        bar
+    ]
+};
 
     key <LSGT>	{ [ backslash,        bar,          bar,    brokenbar ]	};
     key <FK02> { [F2, backslash, F14, F14] };

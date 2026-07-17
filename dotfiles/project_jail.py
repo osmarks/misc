@@ -22,18 +22,30 @@ PROFILES = {
         ("rw", "~/.cargo/bin"),
         ("rw", "~/.cargo/git"),
         ("rw", "~/.cargo/registry"),
-        ("ro", "~/.gitconfig"),
         ("ro", "~/.rustup")
     ],
     "node": [
         ("rw", "~/.npm"),
         ("rw", "~/.cache/node-gyp"),
-        ("ro", "~/.gitconfig")
     ],
-    "python": [],
+    "python": [
+        ("rw", "~/.cache/uv"),
+        ("rw", "~/.cache/pip"),
+    ],
     "gpu": [ # TODO: this is very broad
         ("rw", "/sys")
-    ]
+    ],
+    "codex": [
+        ("rw", "~/.codex")
+    ],
+    "go": [
+        ("rw", "~/go"),
+    ],
+    "git": [("ro", "~/.gitconfig")],
+    "claude": [
+        ("rw", "~/.claude")
+    ],
+    "misc": [("ro", "~/.local/bin")]
 }
 
 def load_config() -> dict[str, dict]:
@@ -77,7 +89,7 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
 
     state_dir = Path(os.environ.get("XDG_STATE_HOME", home / ".local" / "state")) / "project-jails"
     sandbox_name = entry.get("name") or project_root.name
-    sandbox_home = state_dir / sandbox_name / os.path.expanduser("~")
+    sandbox_home = state_dir / sandbox_name / Path(os.path.expanduser("~")).relative_to("/")
     sandbox_tmp = state_dir / sandbox_name / "tmp"
 
     ensure_dir(sandbox_home)
@@ -95,7 +107,10 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
     dev_binds = [
         "/dev/dri",   # GPU
         "/dev/shm",   # shared memory
+        "/dev/ipu0", "/dev/ipu0_ex", "/dev/ipu0_mem", "/dev/ipu0_p2p"
     ]
+
+    home = os.path.expanduser("~")
 
     cmd = [
         bwrap,
@@ -105,8 +120,8 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         "--proc", "/proc",
         "--dev", "/dev",
         "--tmpfs", "/tmp",
-        "--dir", str(sandbox_home),
-        "--setenv", "HOME", str(sandbox_home),
+        "--bind", str(sandbox_home), home,
+        "--setenv", "HOME", home,
         "--setenv", "USER", os.environ.get("USER", ""),
         "--setenv", "LOGNAME", os.environ.get("LOGNAME", ""),
         "--setenv", MARKER_ENV, "1",

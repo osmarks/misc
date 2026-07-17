@@ -1,0 +1,21 @@
+default partial xkb_types "default" {
+    virtual_modifiers Alt, LevelThree;
+
+    type "FOUR_LEVEL_EITHER_ALT" {
+        modifiers = Shift + Alt + LevelThree;
+
+        map[None]                    = Level1;
+        map[Shift]                   = Level2;
+        map[Alt]                     = Level3;
+        map[LevelThree]              = Level3;
+        map[Alt+LevelThree]          = Level3;
+        map[Shift+Alt]               = Level4;
+        map[Shift+LevelThree]        = Level4;
+        map[Shift+Alt+LevelThree]    = Level4;
+
+        level_name[Level1] = "Base";
+        level_name[Level2] = "Shift";
+        level_name[Level3] = "Either Alt";
+        level_name[Level4] = "Shift + Either Alt";
+    };
+};

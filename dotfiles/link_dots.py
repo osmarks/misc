@@ -13,6 +13,7 @@ files = {
     "sway_config": "~/.config/sway/config",
     "zed.json": "~/.config/zed/settings.json",
     "xkb_custom": "~/.config/xkb/symbols/custom",
+    "xkb_ty_custom": "~/.config/xkb/types/custom",
     "sway_custom.desktop": "/usr/share/wayland-sessions/sway_custom.desktop",
     "take-screenshot": "~/.local/bin/take-screenshot",
     "take-screenshot-window": "~/.local/bin/take-screenshot-window",

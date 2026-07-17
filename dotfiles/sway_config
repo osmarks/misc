@@ -17,7 +17,8 @@ output * bg #000000 solid_color
 
 exec swayidle -w timeout 300 'lock' timeout 600 'wlopm --off \*' resume 'wlopm --on \*' before-sleep 'lock'
 exec dunst
-exec arbtt_wayland_toplevel.py
+#exec arbtt_wayland_toplevel.py
+exec arbtt-sway
 exec sway_workspace_ctl.py
 exec fix_gnome.sh
 exec kanshi
@@ -29,7 +30,7 @@ exec_always kanshictl reload
 
 input "type:keyboard" {
     xkb_layout custom
-    xkb_options compose:caps
+    xkb_options compose:caps,custom:types
 }
 
 #input "SYNA7DAB:00 06CB:CDF0 Touchpad" {
@@ -53,8 +54,8 @@ for_window [app_id="firefox" title="Extension"] floating enable
     bindsym $mod+u exec $term start --class term-floating units
     bindsym $mod+p exec $term start --class term-floating python
     bindsym $mod+m exec pavucontrol
-    bindsym $mod+Ctrl+Return exec $term connect --class term-floating protagonism
-    bindsym $mod+Shift+Ctrl+Return exec $term connect --class term protagonism
+    bindsym $mod+Ctrl+Return exec $term connect --class term-floating straylight
+    bindsym $mod+Shift+Ctrl+Return exec $term connect --class term straylight
     bindsym $mod+Shift+Return exec $term start --class term
     bindsym $mod+i exec $term connect --class term-floating unix
     bindsym $mod+Shift+i exec $term connect --class term unix
@@ -62,6 +63,8 @@ for_window [app_id="firefox" title="Extension"] floating enable
     bindsym Ctrl+space exec dunstctl close
     bindsym Print exec take-screenshot-window
     bindsym Ctrl+Print exec take-screenshot
+    bindsym F8 exec take-screenshot-window
+    bindsym Ctrl+F8 exec take-screenshot
     bindsym Ctrl+l exec lock
     bindsym XF86MonBrightnessUp exec light -A 10
     bindsym XF86MonBrightnessDown exec light -U 10
@@ -230,3 +233,5 @@ client.focused_inactive #444460 #444460 #ffffff
 client.unfocused #101010 #101010 #909090
 
 include /etc/sway/config.d/*
+
+xwayland force
