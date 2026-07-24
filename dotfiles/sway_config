@@ -7,7 +7,7 @@ set $left h
 set $down j
 set $up k
 set $right l
-set $term wezterm
+set $term kitty
 set $menu bemenu-run --no-exec | xargs swaymsg exec --
 
 output * adaptive_sync on
@@ -46,20 +46,16 @@ for_window [app_id="firefox" title="Extension"] floating enable
 # Basics:
 #
     # Start a terminal
-    bindsym $mod+Return exec $term start --class term-floating
+    bindsym $mod+Return exec $term --app-id term-floating
     for_window [app_id="term-floating"] floating enable
     bindsym $mod+Backspace exec firefox --new-window about:blank
     bindsym $mod+Shift+Backspace exec firefox --private-window about:blank
     bindsym $mod+Slash exec maghammer.sh
-    bindsym $mod+u exec $term start --class term-floating units
-    bindsym $mod+p exec $term start --class term-floating python
+    bindsym $mod+u exec $term --app-id term-floating units
+    bindsym $mod+p exec $term --app-id term-floating python
     bindsym $mod+m exec pavucontrol
-    bindsym $mod+Ctrl+Return exec $term connect --class term-floating straylight
-    bindsym $mod+Shift+Ctrl+Return exec $term connect --class term straylight
-    bindsym $mod+Shift+Return exec $term start --class term
-    bindsym $mod+i exec $term connect --class term-floating unix
-    bindsym $mod+Shift+i exec $term connect --class term unix
-    bindsym $mod+g exec $term start --class term-floating gpt4term.sh
+    bindsym $mod+Shift+Return exec $term --app-id term
+    bindsym $mod+g exec $term --app-id term-floating gpt4term.sh
     bindsym Ctrl+space exec dunstctl close
     bindsym Print exec take-screenshot-window
     bindsym Ctrl+Print exec take-screenshot
