@@ -43,9 +43,8 @@ packages = [
     "fish",
     "zoxide",
     "atuin",
-    "arc-icon-theme",
+    "papirus-icon-theme",
     "breeze-icons",
-    "arc-gtk-theme",
     "magic-wormhole",
     "syncthing",
     "zoxide",
@@ -53,10 +52,14 @@ packages = [
     "base-devel",
     "mpv",
     "mpv-mpris",
-    "python-mpris2"
+    "python-mpris2",
+    "zed",
+    "jq",
+    "pipewire-jack",
+    "tailscale"
 ]
 
-subprocess.run(["sudo", "pacman", "-S", *packages])
+subprocess.run(["sudo", "pacman", "-S", *packages, "--confirm"])
 
 this = Path(sys.argv[0]).parent
 print(this)
