@@ -19,7 +19,9 @@ files = {
     "take-screenshot-window": "~/.local/bin/take-screenshot-window",
     "waybar_config": "~/.config/waybar/config",
     "waybar_style.css": "~/.config/waybar/style.css",
-    "kitty.conf": "~/.config/kitty/kitty.conf"
+    "kitty.conf": "~/.config/kitty/kitty.conf",
+    "mpris_smart_toggle.py": "~/.local/bin/mpris_smart_toggle.py",
+    "project_jail.py": "~/.local/bin/project-jail"
 }
 
 packages = [
@@ -56,7 +58,11 @@ packages = [
     "zed",
     "jq",
     "pipewire-jack",
-    "tailscale"
+    "tailscale",
+    "pipewire-pulse",
+    "swayidle",
+    "rofi",
+    "htop"
 ]
 
 subprocess.run(["sudo", "pacman", "-S", *packages, "--confirm"])

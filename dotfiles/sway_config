@@ -50,12 +50,12 @@ for_window [app_id="firefox" title="Extension"] floating enable
     for_window [app_id="term-floating"] floating enable
     bindsym $mod+Backspace exec firefox --new-window about:blank
     bindsym $mod+Shift+Backspace exec firefox --private-window about:blank
-    bindsym $mod+Slash exec maghammer.sh
+    bindsym $mod+Slash exec firefox --new-window https://maghammer.osmarks.net/
     bindsym $mod+u exec $term --app-id term-floating units
     bindsym $mod+p exec $term --app-id term-floating python
     bindsym $mod+m exec pavucontrol
     bindsym $mod+Shift+Return exec $term --app-id term
-    bindsym $mod+g exec $term --app-id term-floating gpt4term.sh
+    bindsym $mod+g exec firefox --new-window https://chatgpt.com/
     bindsym Ctrl+space exec dunstctl close
     bindsym Print exec take-screenshot-window
     bindsym Ctrl+Print exec take-screenshot
