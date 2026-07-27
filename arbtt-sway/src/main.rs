@@ -110,6 +110,7 @@ fn sway_thread(wr_state: WrState) -> Result<()> {
         let mut focused = SmolStr::new("");
         process_tree(&tree, &mut windows, &mut focused, None);
         let mut state = wr_state.0.lock().unwrap();
+        //println!("emit tree {:?}", windows);
         std::mem::swap(&mut state.windows, &mut windows);
         state.focused_desktop = focused;
     };
@@ -118,9 +119,11 @@ fn sway_thread(wr_state: WrState) -> Result<()> {
 
     let st = connection.subscribe([EventType::Window])?;
     for _s in st {
+        //println!("reread");
         read_windows();
     }
-    Ok(())
+
+    std::process::exit(0);
 }
 
 const INTERVAL: Duration = Duration::from_secs(60);
@@ -134,6 +137,7 @@ fn arbtt_thread(wr_state: WrState) -> Result<()> {
     loop {
         std::thread::sleep(INTERVAL); // this will drift but close enough
         let state = wr_state.0.lock().unwrap();
+        //let stdout = std::io::stdout().lock();
         serde_json::to_writer(stdin, &ArbttEntry {
             date: Utc::now(),
             rate: INTERVAL.as_millis() as u64,
@@ -176,6 +180,4 @@ fn main() -> Result<()> {
         conn.flush()?;
         event_queue.blocking_dispatch(&mut wr_state)?;
     }
-
-    Ok(())
 }
