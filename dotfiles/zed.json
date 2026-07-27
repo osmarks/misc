@@ -7,6 +7,25 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+    "proxy": "",
+    "ssh_connections": [
+        {
+            "host": "straylight",
+            "args": [],
+            "projects": [
+                {
+                    "paths": [
+                        "/srv/home/gc-sdk/./"
+                    ]
+                },
+                {
+                    "paths": [
+                        "/srv/home/gc-sdk/ipu-stack"
+                    ]
+                }
+            ]
+        }
+    ],
     "cli_default_open_behavior": "new_window",
     "outline_panel": {
         "dock": "left"

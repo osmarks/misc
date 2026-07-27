@@ -19,7 +19,7 @@ files = {
     "take-screenshot-window": "~/.local/bin/take-screenshot-window",
     "waybar_config": "~/.config/waybar/config",
     "waybar_style.css": "~/.config/waybar/style.css",
-    "wezterm.lua": "~/.wezterm.lua"
+    "kitty.conf": "~/.config/kitty/kitty.conf"
 }
 
 packages = [
@@ -32,7 +32,7 @@ packages = [
     "dunst",
     "slurp",
     "grim",
-    "wezterm",
+    "kitty",
     "ttf-fira-code",
     "network-manager-applet",
     "kanshi",
@@ -46,7 +46,14 @@ packages = [
     "arc-icon-theme",
     "breeze-icons",
     "arc-gtk-theme",
-    "magic-wormhole"
+    "magic-wormhole",
+    "syncthing",
+    "zoxide",
+    "libqalculate",
+    "base-devel",
+    "mpv",
+    "mpv-mpris",
+    "python-mpris2"
 ]
 
 subprocess.run(["sudo", "pacman", "-S", *packages])

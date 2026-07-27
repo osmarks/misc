@@ -105,8 +105,8 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         "/etc",
     ]
     dev_binds = [
-        "/dev/dri",   # GPU
-        "/dev/shm",   # shared memory
+        "/dev/dri",
+        "/dev/shm",
         "/dev/ipu0", "/dev/ipu0_ex", "/dev/ipu0_mem", "/dev/ipu0_p2p"
     ]
 
