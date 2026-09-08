@@ -1,5 +1,8 @@
 // based on https://github.com/josephdunn/idlers/blob/main/src/main.rs
 
+#[cfg(test)]
+mod tests;
+
 use std::process::{Command, Stdio};
 use std::time::{Instant, Duration};
 use std::sync::{Mutex, Arc};
@@ -7,7 +10,7 @@ use std::io::Write;
 use std::thread;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use swayipc::{EventType, Node, NodeType, Workspace};
+use swayipc::{EventType, Node, NodeType};
 use wayland_client::{Connection, Dispatch, QueueHandle, delegate_noop, event_created_child, globals::{GlobalListContents, registry_queue_init}, protocol::{wl_registry, wl_seat}};
 use wayland_protocols::ext::idle_notify::v1::client::{ext_idle_notification_v1::{self, ExtIdleNotificationV1}, ext_idle_notifier_v1::ExtIdleNotifierV1};
 use smol_str::SmolStr;
@@ -26,7 +29,7 @@ impl Dispatch<ExtIdleNotificationV1, ()> for WrState {
         state: &mut Self,
         _proxy: &ExtIdleNotificationV1,
         event: ext_idle_notification_v1::Event,
-        data: &(),
+        _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
     ) {
@@ -100,12 +103,19 @@ fn process_tree<'a>(node: &'a Node, windows: &mut Vec<ArbttWindow>, focused: &mu
 }
 
 fn sway_thread(wr_state: WrState) -> Result<()> {
-    let mut connection = swayipc::Connection::new()?;
+    watch_sway(wr_state, swayipc::Connection::new()?, swayipc::Connection::new()?)
+}
 
-    let tree = connection.get_tree()?;
+fn watch_sway(
+    wr_state: WrState,
+    mut connection: swayipc::Connection,
+    events: swayipc::Connection,
+) -> Result<()> {
+    let events = events.subscribe([EventType::Window, EventType::Workspace])?;
     let mut windows = vec![];
 
-    let mut read_windows = || {
+    let mut read_windows = || -> Result<()> {
+        let tree = connection.get_tree()?;
         windows.clear();
         let mut focused = SmolStr::new("");
         process_tree(&tree, &mut windows, &mut focused, None);
@@ -113,17 +123,17 @@ fn sway_thread(wr_state: WrState) -> Result<()> {
         //println!("emit tree {:?}", windows);
         std::mem::swap(&mut state.windows, &mut windows);
         state.focused_desktop = focused;
+        Ok(())
     };
 
-    read_windows();
+    read_windows()?;
 
-    let st = connection.subscribe([EventType::Window])?;
-    for _s in st {
-        //println!("reread");
-        read_windows();
+    for event in events {
+        event?;
+        read_windows()?;
     }
 
-    std::process::exit(0);
+    anyhow::bail!("Sway event stream ended")
 }
 
 const INTERVAL: Duration = Duration::from_secs(60);
@@ -170,7 +180,10 @@ fn main() -> Result<()> {
     let wr_state_ = wr_state.clone();
     let wr_state__ = wr_state.clone();
     thread::spawn(|| {
-        sway_thread(wr_state_).unwrap()
+        if let Err(error) = sway_thread(wr_state_) {
+            eprintln!("Sway window tracking failed: {error:#}");
+            std::process::exit(1);
+        }
     });
     thread::spawn(|| {
        arbtt_thread(wr_state__).unwrap()
