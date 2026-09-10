@@ -74,5 +74,14 @@
             "pyright"
           ]
         }
-      }
+      },
+    "edit_predictions": {
+        "provider": "open_ai_compatible_api",
+        "open_ai_compatible_api": {
+            "api_url": "http://localhost:9931/v1/completions",
+            "model": "zeta2.1",
+            "prompt_format": "zeta2_1",
+            "max_output_tokens": 96
+        }
+    }
 }

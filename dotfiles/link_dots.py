@@ -62,7 +62,9 @@ packages = [
     "pipewire-pulse",
     "swayidle",
     "rofi",
-    "htop"
+    "htop",
+    "python-requests",
+    "python-beautifulsoup4"
 ]
 
 subprocess.run(["sudo", "pacman", "-S", *packages, "--confirm"])

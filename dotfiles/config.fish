@@ -19,6 +19,10 @@ function __project_jail_chpwd --on-variable PWD
         set -e NORECURSE
         return
     end
+    if set -q DISABLE_SANDBOX_ONCE
+        set -e DISABLE_SANDBOX_ONCE
+        return
+    end
     if set -q IN_PROJECT_JAIL
         return
     end
@@ -33,9 +37,19 @@ function __project_jail_chpwd --on-variable PWD
     end
 end
 
+function disable_sandbox
+    set -g DISABLE_SANDBOX_ONCE
+end
+
 # Also check once at shell startup.
 if not set -q IN_PROJECT_JAIL
     if test -x ~/.local/bin/project-jail
         ~/.local/bin/project-jail
     end
 end
+
+# why did they do this? why do they hate me so?
+bind ctrl-left backward-word
+bind ctrl-right forward-word
+bind alt-left prevd-or-backward-token
+bind alt-right nextd-or-forward-token
