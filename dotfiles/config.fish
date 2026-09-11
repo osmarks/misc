@@ -53,3 +53,8 @@ bind ctrl-left backward-word
 bind ctrl-right forward-word
 bind alt-left prevd-or-backward-token
 bind alt-right nextd-or-forward-token
+bind alt-backspace backward-kill-token
+bind alt-delete kill-token
+bind ctrl-backspace backward-kill-word
+bind ctrl-delete kill-word
+bind ctrl-alt-h backward-kill-token
