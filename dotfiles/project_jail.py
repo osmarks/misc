@@ -2,15 +2,15 @@
 
 # Automatically put shell sessions in bwrap when navigating to a project folder.
 # Supply chain attack mitigation.
-# Written by GPT-5.4 and adapted slightly by hand.
+# Written by GPT-5.4 and adapted slightly by hand and GPT-6.
 
 import json
 import os
 import subprocess
 import shutil
+import stat
 import sys
 from pathlib import Path
-import os
 
 CONFIG_PATH = Path.home() / ".config" / "jails.json"
 MARKER_ENV = "IN_PROJECT_JAIL"
@@ -19,7 +19,7 @@ ANTIJACK_SYSCALL_FILTER = Path.home() / ".config" / "jail-antijack"
 # this is not great because it shares the caches, but oh well
 PROFILES = {
     "rust": [
-        ("rw", "~/.cargo/bin"),
+        ("ro", "~/.cargo/bin"),
         ("rw", "~/.cargo/git"),
         ("rw", "~/.cargo/registry"),
         ("ro", "~/.rustup")
@@ -32,8 +32,13 @@ PROFILES = {
         ("rw", "~/.cache/uv"),
         ("rw", "~/.cache/pip"),
     ],
-    "gpu": [ # TODO: this is very broad
-        ("rw", "/sys")
+    "gpu": [
+        ("ro", "/sys"),
+        ("dev", "/dev/dri"),
+        ("dev", "/dev/ipu0"),
+        ("dev", "/dev/ipu0_ex"),
+        ("dev", "/dev/ipu0_mem"),
+        ("dev", "/dev/ipu0_p2p"),
     ],
     "codex": [
         ("rw", "~/.codex")
@@ -45,8 +50,49 @@ PROFILES = {
     "claude": [
         ("rw", "~/.claude")
     ],
-    "misc": [("ro", "~/.local/bin")]
+    "misc": [("ro", "~/.local/bin")],
+    # Bind the bus directory, not individual bus nodes, so libusb sees hotplug.
+    # Host device permissions/udev ACLs still apply.
+    "usb": [("ro", "/sys"), ("dev", "/dev/bus/usb")]
 }
+
+# Preserve the user's development environment, but remove host service
+# addresses. Selected Wayland/audio endpoints are restored after mounting them.
+HOST_SERVICE_ENV = (
+    "DBUS_SESSION_BUS_ADDRESS", "DBUS_SYSTEM_BUS_ADDRESS",
+    "SSH_AUTH_SOCK", "SSH_AGENT_PID", "GPG_AGENT_INFO",
+    "DISPLAY", "XAUTHORITY", "SESSION_MANAGER",
+    "WAYLAND_DISPLAY", "WAYLAND_SOCKET", "PULSE_SERVER", "PIPEWIRE_REMOTE",
+)
+
+
+def desktop_socket_args(runtime_dir: str) -> list[str]:
+    """Expose individual desktop sockets, never the session bus/agent directory."""
+    cmd = []
+    runtime = Path(runtime_dir)
+    wayland = os.environ.get("WAYLAND_DISPLAY")
+    sockets = [
+        (runtime / "pulse/native", "PULSE_SERVER", f"unix:{runtime}/pulse/native"),
+        (runtime / "pipewire-0", None, None),
+    ]
+    if wayland:
+        path = Path(wayland)
+        if not path.is_absolute():
+            path = runtime / path
+        # Do not allow a display variable to expose an arbitrary host socket.
+        if path.parent == runtime and path.name.startswith("wayland-"):
+            sockets.append((path, "WAYLAND_DISPLAY", wayland))
+    for path, variable, value in sockets:
+        try:
+            # Reject symlinks as well as non-sockets.
+            if not stat.S_ISSOCK(path.lstat().st_mode):
+                continue
+        except FileNotFoundError:
+            continue
+        cmd += ["--ro-bind", str(path), str(path)]
+        if variable:
+            cmd += ["--setenv", variable, value]
+    return cmd
 
 def load_config() -> dict[str, dict]:
     with CONFIG_PATH.open("r", encoding="utf-8") as f:
@@ -90,10 +136,8 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
     state_dir = Path(os.environ.get("XDG_STATE_HOME", home / ".local" / "state")) / "project-jails"
     sandbox_name = entry.get("name") or project_root.name
     sandbox_home = state_dir / sandbox_name / Path(os.path.expanduser("~")).relative_to("/")
-    sandbox_tmp = state_dir / sandbox_name / "tmp"
 
     ensure_dir(sandbox_home)
-    ensure_dir(sandbox_tmp)
 
     ro_binds = [
         "/usr",
@@ -104,11 +148,7 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         "/opt",
         "/etc",
     ]
-    dev_binds = [
-        "/dev/dri",
-        "/dev/shm",
-        "/dev/ipu0", "/dev/ipu0_ex", "/dev/ipu0_mem", "/dev/ipu0_p2p"
-    ]
+    dev_binds = []
 
     home = os.path.expanduser("~")
 
@@ -119,6 +159,7 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         "--die-with-parent",
         "--proc", "/proc",
         "--dev", "/dev",
+        "--tmpfs", "/dev/shm",
         "--tmpfs", "/tmp",
         "--bind", str(sandbox_home), home,
         "--setenv", "HOME", home,
@@ -126,21 +167,35 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         "--setenv", "LOGNAME", os.environ.get("LOGNAME", ""),
         "--setenv", MARKER_ENV, "1",
         "--setenv", "PROJECT_ROOT", str(project_root),
+        # Real chown to an unmapped ID returns EINVAL, which fakeroot does not
+        # suppress. Keep ownership changes entirely in fakeroot's database.
+        "--setenv", "FAKEROOTDONTTRYCHOWN", "1",
         "--chdir", str(cwd),
         "--seccomp", str(fd)
     ]
+    for variable in HOST_SERVICE_ENV:
+        cmd += ["--unsetenv", variable]
 
     rw_binds = []
 
     for profile in entry["profile"]:
-        for type, path in PROFILES[profile]:
+        for mode, path in PROFILES[profile]:
             path = str(resolve_path(path))
-            if type == "rw":
+            if mode == "rw":
                 rw_binds.append(path)
-            elif type == "ro":
+            elif mode == "ro":
                 ro_binds.append(path)
+            elif mode == "dev":
+                dev_binds.append(path)
             else:
-                assert False
+                raise ValueError(f"Unknown mount mode: {mode}")
+
+    if "usb" in entry["profile"]:
+        # Serial/HID interfaces live outside usbfs. Individual binds cover
+        # devices present at entry; reconnecting these requires a new jail.
+        for pattern in ("ttyUSB*", "ttyACM*", "hidraw*"):
+            dev_binds.extend(str(path) for path in sorted(Path("/dev").glob(pattern)))
+        ro_binds.append("/dev/serial")
 
     for path in ro_binds:
         if Path(path).exists():
@@ -154,36 +209,33 @@ def build_bwrap_command(entry: dict, cwd: Path, fd: int) -> list[str]:
         if Path(path).exists():
             cmd += ["--dev-bind", path, path]
 
-    # TODO: maybe don't pass all this through
-    runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
-    if runtime_dir and Path(runtime_dir).exists():
-        cmd += ["--bind", runtime_dir, runtime_dir]
-        cmd += ["--setenv", "XDG_RUNTIME_DIR", runtime_dir]
+    # A private runtime directory hides systemd/D-Bus, SSH/GPG agents and other
+    # host control sockets. Keep Wayland/audio working via selected sockets.
+    runtime_dir = f"/run/user/{os.getuid()}"
+    host_runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if host_runtime and Path(host_runtime).is_absolute():
+        runtime_dir = host_runtime
+    cmd += ["--perms", "0700", "--tmpfs", runtime_dir]
+    cmd += ["--setenv", "XDG_RUNTIME_DIR", runtime_dir]
+    if host_runtime:
+        cmd += desktop_socket_args(runtime_dir)
 
     cmd += ["--setenv", "fish_color_cwd", "red"]
 
-    envs = ["WAYLAND_DISPLAY", "DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "PULSE_SERVER"]
-
-    for env in envs:
-        if res := os.environ.get(env):
-            cmd += ["--setenv", env, res]
+    cmd += ["--setenv", "SHELL", shell]
 
     # Mount the selected project tree at the same absolute path.
     cmd += ["--bind", str(project_root), str(project_root)]
 
-    # Minimal env cleanup.
     cmd += [
         shell,
         "-i",
     ]
     #print(cmd)
-    print(f"-> sandbox profile {entry['profile']} for {entry['name']}")
+    print(f"-> sandbox profile {entry['profile']} for {sandbox_name}", flush=True)
     return cmd
 
 def main() -> int:
-    if not ANTIJACK_SYSCALL_FILTER.exists():
-        subprocess.run(["antijack", "-o", ANTIJACK_SYSCALL_FILTER]).check_returncode()
-
     if os.environ.get(MARKER_ENV) == "1":
         return 0
 
@@ -192,6 +244,9 @@ def main() -> int:
     entry = find_matching_entry(cwd, config)
     if not entry:
         return 2
+
+    if not ANTIJACK_SYSCALL_FILTER.exists():
+        subprocess.run(["antijack", "-o", ANTIJACK_SYSCALL_FILTER]).check_returncode()
 
     # TODO: seccomp filter is not invulnerable and this would ideally be pty-based
     f = open(ANTIJACK_SYSCALL_FILTER, "rb")
